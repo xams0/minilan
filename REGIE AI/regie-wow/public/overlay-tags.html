@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Noms POV</title>
+<style>
+  html, body { margin: 0; background: transparent; overflow: hidden; font-family: "Segoe UI", system-ui, sans-serif; }
+  #stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  .tag { position: absolute; display: flex; align-items: center; gap: 10px; padding: 8px 18px 8px 12px;
+    background: linear-gradient(90deg, #0d0f14ee, #0d0f14aa); border-left: 5px solid #f5b301; color: #fff;
+    font-weight: 800; font-size: 30px; letter-spacing: .02em; border-radius: 0 10px 10px 0; text-shadow: 0 2px 4px #000; }
+  .tag b { color: #f5b301; font-size: .8em; }
+  .tag.small { font-size: 20px; padding: 5px 12px 5px 9px; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+// Browser source du PC POV, une par scène : /overlay/tags?slot=A et ?slot=B
+const slot = new URLSearchParams(location.search).get('slot') || 'A';
+const stage = document.getElementById('stage');
+function connect() {
+  const ws = new WebSocket(`ws://${location.host}/ws?role=tags&slot=${slot}`);
+  ws.onmessage = e => {
+    const m = JSON.parse(e.data);
+    if (m.type !== 'tags' || m.slot !== slot) return;
+    const [W, H] = m.canvas;
+    stage.style.width = W + 'px'; stage.style.height = H + 'px';
+    stage.style.transform = `scale(${innerWidth / W})`;
+    stage.innerHTML = m.tags.filter(t => t.name).map((t, k) => {
+      const [x, y, w, h] = t.rect, m = t.small ? 10 : 24;
+      return `<div class="tag ${t.small ? 'small' : ''}" style="left:${x}px;top:${y + h - m - (t.small ? 38 : 56)}px">${t.name}</div>`;
+    }).join('');
+  };
+  ws.onclose = () => setTimeout(connect, 1500);
+}
+connect();
+</script>
+</body>
+</html>

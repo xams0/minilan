@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Start-Process -FilePath \".\\\\MediaMTX\\\\mediamtx.exe\" -ArgumentList \".\\\\MediaMTX\\\\mediamtx.yml\" -PassThru | Select-Object Id, ProcessName)",
+      "PowerShell(Start-Sleep -Seconds 2; try { Invoke-RestMethod -Uri \"http://127.0.0.1:9997/v3/paths/list\" -TimeoutSec 5 | ConvertTo-Json -Depth 3 } catch { \"ERREUR : $_\" })",
+      "PowerShell(Get-Process *)",
+      "PowerShell(Start-Sleep -Seconds 3; try { Invoke-RestMethod -Uri \"http://127.0.0.1:9997/v3/paths/list\" -TimeoutSec 5 | ConvertTo-Json -Depth 2 } catch { \"API non accessible : $_\" })",
+      "PowerShell(Start-Process \"C:\\\\Users\\\\maxim\\\\Desktop\\\\MediaMTX\\\\MediaMTX\\\\dashboard.html\")",
+      "PowerShell(try { Invoke-RestMethod \"http://127.0.0.1:9997/v3/paths/list\" | ConvertTo-Json -Depth 2 | Select-Object -First 10 } catch { \"ERREUR: $_\" })",
+      "PowerShell(Stop-Process *)",
+      "PowerShell(Start-Sleep -Seconds 2; try { $r = Invoke-WebRequest \"http://127.0.0.1:9997/v3/paths/list\" -UseBasicParsing; $r.Headers[\"Access-Control-Allow-Origin\"] } catch { \"ERREUR: $_\" })",
+      "PowerShell(Start-Process powershell -ArgumentList \"-NoExit\", \"-File\", \"C:\\\\Users\\\\maxim\\\\Desktop\\\\MediaMTX\\\\MediaMTX\\\\start_dashboard.ps1\")",
+      "PowerShell(Start-Sleep -Seconds 3; try { Invoke-RestMethod \"http://127.0.0.1:8080/api/paths\" -TimeoutSec 5 | Select-Object itemCount } catch { \"Pas encore prêt: $_\" })",
+      "PowerShell(Start-Sleep -Seconds 3; try { \\(Invoke-WebRequest \"http://127.0.0.1:8080/api/paths\" -UseBasicParsing -TimeoutSec 3\\).StatusCode } catch { \"Pas accessible: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(python --version 2>&1; node --version 2>&1)",
+      "PowerShell(Start-Sleep -Seconds 2; try { \\(Invoke-WebRequest \"http://127.0.0.1:8080/api/paths\" -UseBasicParsing -TimeoutSec 4\\).StatusCode } catch { \"Erreur: $\\($_.Exception.Message\\)\" })",
+      "PowerShell(Start-Process \"http://127.0.0.1:8080\")"
+    ]
+  }
+}

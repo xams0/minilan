@@ -1,0 +1,107 @@
+###############################################################################
+# MediaMTX - Config LAN eSport 16 joueurs
+# OBS Joueur → SRT Caller → MediaMTX → SRT → OBS Régie
+#
+# JOUEURS (OBS) :
+#   URL SRT : srt://192.168.1.100:8890?streamid=publish:joueur1
+#   (remplacer joueur1 par joueur2...joueur16 selon le poste)
+#
+# RÉGIE (OBS) :
+#   URL SRT : srt://192.168.1.100:8890?streamid=read:joueur1
+#   (tirer autant de sources qu'on veut simultanément)
+#
+# Remplacer 192.168.1.100 par l'IP réelle de la machine MediaMTX
+###############################################################################
+
+
+# --- API de monitoring ---
+api: yes
+apiAddress: :9997
+
+# Par défaut MediaMTX restreint l'accès API à 127.0.0.1/::1 (401 pour tout
+# autre appelant, même sans mot de passe configuré). On l'ouvre au LAN pour
+# le scan et le monitoring depuis mtx-audio-router.
+authInternalUsers:
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: publish
+      - action: read
+      - action: playback
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: api
+      - action: metrics
+      - action: pprof
+
+# --- Logs ---
+logLevel: info
+logDestinations: [stdout, file]
+logFile: logs/mediamtx.log
+
+# --- Limites globales ---
+readTimeout: 10s
+writeTimeout: 10s
+
+
+###############################################################################
+# Serveur SRT
+###############################################################################
+srt: yes
+srtAddress: :8890
+
+
+###############################################################################
+# Désactiver les protocoles inutiles (sécurité + performances)
+###############################################################################
+rtsp: no
+rtmp: no
+hls: no
+webrtc: no
+
+
+###############################################################################
+# Chemins (un par joueur)
+###############################################################################
+paths:
+
+  # --- 16 chemins explicites pour les joueurs ---
+
+  xams:
+    source: publisher
+    overridePublisher: yes
+
+  yaourt:
+    source: publisher
+    overridePublisher: yes
+
+  shyne:
+    source: publisher
+    overridePublisher: yes
+
+  keamy:
+    source: publisher
+    overridePublisher: yes
+
+  tioneb:
+    source: publisher
+    overridePublisher: yes
+
+  erimghul:
+    source: publisher
+    overridePublisher: yes
+
+  darky:
+    source: publisher
+    overridePublisher: yes
+    
+  fuego:
+    source: publisher
+    overridePublisher: yes    
+  
+  billy:
+    source: publisher
+    overridePublisher: yes  

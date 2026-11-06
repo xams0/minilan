@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Overlay régie</title>
+<style>
+  html, body { margin: 0; background: transparent; overflow: hidden; font-family: "Segoe UI", system-ui, sans-serif; color: #fff; }
+  #stage { position: absolute; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  .box { position: absolute; background: #0d0f14e6; border: 2px solid #f5b30199; border-radius: 16px; padding: 18px 22px;
+    box-shadow: 0 10px 40px #0008; transition: opacity .4s, transform .4s; }
+  .hide { opacity: 0; transform: translateY(20px); pointer-events: none; }
+  h3 { margin: 0 0 4px; font-size: 26px; color: #f5b301; letter-spacing: .04em; }
+  .sub { color: #aab2c3; font-size: 20px; margin-bottom: 12px; }
+  #vote { right: 30px; top: 340px; width: 430px; }
+  .opt { display: grid; grid-template-columns: 34px 1fr 44px; gap: 10px; align-items: center; margin: 7px 0; font-size: 21px; font-weight: 700; }
+  .opt .n { color: #f5b301; text-align: right; }
+  .opt .k { background: #f5b301; color: #111; border-radius: 6px; text-align: center; font-size: 17px; }
+  .opt.dim { opacity: .35; }
+  .bar { height: 8px; background: #fff2; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+  .bar i { display: block; height: 100%; background: #f5b301; transition: width .5s; }
+  .timer { height: 6px; background: #fff2; border-radius: 3px; overflow: hidden; margin-top: 12px; }
+  .timer i { display: block; height: 100%; background: #ff3b4e; transition: width 1s linear; }
+  #spot { left: 50%; top: 36px; transform: translateX(-50%); text-align: center; font-size: 30px; font-weight: 800; padding: 16px 34px; border-color: #ff3b4e; }
+  #spot.hide { transform: translate(-50%, -20px); }
+  #board { left: 40px; top: 200px; width: 520px; }
+  .row { display: grid; grid-template-columns: 34px 1fr 90px; gap: 10px; font-size: 22px; padding: 6px 0; border-bottom: 1px solid #fff1; }
+  .row .t { text-align: right; color: #f5b301; font-weight: 800; }
+  #toast { left: 50%; bottom: 60px; transform: translateX(-50%); font-size: 28px; font-weight: 800; padding: 14px 30px; }
+  #toast.hide { transform: translate(-50%, 20px); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="box hide" id="vote"></div>
+  <div class="box hide" id="spot"></div>
+  <div class="box hide" id="board"></div>
+  <div class="box hide" id="toast"></div>
+</div>
+<script>
+// Browser source du PC Stream (1920x1080, au-dessus de la capture HDMI)
+const stage = document.getElementById('stage');
+const fit = () => stage.style.transform = `scale(${innerWidth / 1920})`;
+addEventListener('resize', fit); fit();
+const $ = id => document.getElementById(id);
+const fmt = s => `${Math.floor(s / 60)} min`;
+const timers = {};
+function flash(id, html, sec) {
+  $(id).innerHTML = html; $(id).classList.remove('hide');
+  clearTimeout(timers[id]); timers[id] = setTimeout(() => $(id).classList.add('hide'), sec * 1000);
+}
+
+function renderVote(v, now, total) {
+  if (!v) { $('vote').classList.add('hide'); return; }
+  const max = Math.max(1, ...v.options.map(o => o.n));
+  const left = Math.max(0, v.endsAt - now), pct = left / (total * 1000) * 100;
+  $('vote').innerHTML = `<h3>🎬 LE CHAT RÉALISE</h3><div class="sub">Tape <b>!pov numéro</b> ou <b>!pov pseudo</b> · ${Math.ceil(left / 1000)}s</div>`
+    + v.options.map(o => `<div class="opt ${o.private ? 'dim' : ''}"><span class="k">${typeof o.key === 'number' ? o.key + 1 : o.key === 'MOSAIC' ? '★' : '⌂'}</span>
+      <div>${o.label}<div class="bar"><i style="width:${o.n / max * 100}%"></i></div></div><span class="n">${o.n}</span></div>`).join('')
+    + `<div class="timer"><i style="width:${pct}%"></i></div>`;
+  $('vote').classList.remove('hide');
+}
+
+function connect() {
+  const ws = new WebSocket(`ws://${location.host}/ws?role=overlay`);
+  ws.onmessage = e => {
+    const m = JSON.parse(e.data);
+    if (m.type === 'live') { renderVote(m.mode === 'CHAT' ? m.vote : null, m.now, m.voteSeconds); return; }
+    if (m.type !== 'overlay') return;
+    if (m.kind === 'board') {
+      flash('board', `<h3>⏱ TEMPS D'ÉCRAN</h3><div class="sub">Objectif : le même pour tout le monde</div>`
+        + m.board.map((p, k) => `<div class="row"><span>${k + 1}</span><span>${p.name}</span><span class="t">${fmt(p.screenTime)}</span></div>`).join(''), 15);
+    }
+    if (m.kind === 'spotlight') flash('spot', `🔦 Coup de projecteur de <span style="color:#f5b301">${m.by}</span> sur ${m.label}`, Math.min(m.sec, 12));
+    if (m.kind === 'voteResult') flash('toast', `🎬 Le chat a choisi <span style="color:#f5b301">${m.label}</span> (${m.votes}/${m.total})`, 6);
+  };
+  ws.onclose = () => setTimeout(connect, 1500);
+}
+connect();
+</script>
+</body>
+</html>

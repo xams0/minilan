@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Régie Forever — brief Claude Code</title>
+<style>
+:root{--bg:#fff;--fg:#1d1f24;--dim:#5d6470;--line:#e3e5ea;--code:#f4f5f7;--accent:#a8751a}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--fg:#e8eaee;--dim:#9aa1ad;--line:#2a2e36;--code:#1a1d23;--accent:#e9b44c}}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,"Segoe UI",system-ui,sans-serif}
+main{max-width:860px;margin:0 auto;padding:40px 20px 80px}
+h1{font-size:30px;letter-spacing:-.02em;margin:0 0 12px} h2{font-size:22px;margin:40px 0 10px;padding-top:20px;border-top:1px solid var(--line)} h3{font-size:17px;margin:24px 0 8px}
+blockquote{margin:0;padding:10px 14px;border-left:3px solid var(--accent);background:var(--code);color:var(--dim);border-radius:0 8px 8px 0}
+blockquote p{margin:4px 0}
+code{font:13.5px ui-monospace,Menlo,Consolas,monospace;background:var(--code);padding:1px 5px;border-radius:4px}
+pre{background:var(--code);padding:14px;border-radius:10px;overflow-x:auto} pre code{padding:0;background:none}
+table{border-collapse:collapse;width:100%;font-size:14px;display:block;overflow-x:auto} th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top} th{color:var(--dim);font-weight:600}
+li{margin:3px 0} hr{border:0;border-top:1px solid var(--line)} strong{font-weight:650}
+</style></head><body><main>
+<h1>Régie Forever — brief de reprise pour Claude Code</h1>
+<blockquote>
+<p>But de ce document : permettre à Claude Code de reprendre le projet sans l'historique de la conversation.
+Le code existant est dans ce dossier (<code>regie-wow/</code>). La maquette du dock cible est publiée en artifact (« Régie Forever »).</p>
+</blockquote>
+<hr />
+<h2>1. Contexte</h2>
+<ul>
+<li>Live Twitch de <strong>10 h</strong> sur <strong>WoW Forever</strong>, en <strong>LAN</strong> : <strong>8 joueurs</strong> dans la même maison.</li>
+<li>Objectif : une <strong>régie automatique</strong> qui choisit quelles POV afficher (plein écran, split, PIP, quad, mosaïque, caméra pièce), avec <strong>3 modes</strong> :</li>
+<li><strong>AUTO IA</strong> : décide seule à partir de l'action en jeu + équité du temps d'écran.</li>
+<li><strong>CHAT</strong> : le chat Twitch vote (<code>!pov 3</code>, <code>!pov pseudo</code>) + points de chaîne.</li>
+<li><strong>MANUEL</strong> : le régisseur choisit, l'IA suggère.</li>
+<li>Contrainte forte : <strong>temps d'écran équitable</strong> entre les 8 joueurs sur 10 h (≈ 72–75 min chacun).</li>
+<li>Les <strong>casters</strong> apparaissent automatiquement (PIP / split / plein écran) selon qu'ils sont devant leur caméra et qu'ils parlent.</li>
+</ul>
+<h2>2. Setup matériel (réel, à respecter)</h2>
+<pre><code>8 PC joueurs ──SRT──▶ PC POV (OBS) ──HDMI──▶ PC Stream (OBS) ──▶ Twitch
+  │ agent.mjs           scènes REGIE_A/B        scène LIVE :
+  │ (combat log)        8 POV uniquement        capture HDMI + cam casters
+  │                                             + cam pièce + overlays + micros casters
+  └────────────▶ RÉGIE (Node.js, tourne sur le PC Stream, port 8080)
+                  ◀── dock OBS, tablette, Stream Deck, chat Twitch, Claude (option)
+</code></pre>
+<ul>
+<li><strong>PC POV</strong> : reçoit les <strong>8 POV en SRT</strong> (Sources média <code>srt://…</code>). Ne contient <strong>que</strong> les POV. Compose plein écran / split / PIP / quad / mosaïque. Sortie = projecteur plein écran (Programme) en <strong>HDMI</strong> vers le PC Stream.</li>
+<li><strong>PC Stream</strong> : reçoit le HDMI, gère overlays, micros casters, <strong>caméra casters</strong> et <strong>caméra pièce</strong>, envoie sur Twitch. C'est là que le régisseur travaille → <strong>l'interface principale est un dock OBS</strong> sur ce PC.</li>
+<li>Les deux OBS sont pilotés via <strong>obs-websocket v5</strong> (port 4455).</li>
+</ul>
+<h2>3. Ce qui existe déjà (code dans ce dossier)</h2>
+<p>Node.js ≥ 20, ESM. Dépendances : <code>obs-websocket-js</code>, <code>ws</code>, <code>jpeg-js</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Fichier</th>
+<th>Rôle</th>
+<th>État</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>src/director.js</code></td>
+<td>Cerveau : scores d'intérêt, dette d'écran, décisions, modes, casters, votes, spotlight, persistance <code>data/state.json</code></td>
+<td>Fonctionnel, testé en simulation</td>
+</tr>
+<tr>
+<td><code>src/layouts.js</code></td>
+<td>Géométrie des plans (canevas 1920×1080) + poids de temps d'écran</td>
+<td>OK</td>
+</tr>
+<tr>
+<td><code>src/obs.js</code></td>
+<td><code>Pc1</code> (PC POV, bascule REGIE_A/B, captures pour mouvement/AFK, vignettes) · <code>Pc2</code> (PC Stream : jeu, cam casters, cam pièce, animations, détection de présence par diff d'image, VU-mètres micros)</td>
+<td>Écrit, <strong>jamais testé contre un vrai OBS</strong></td>
+</tr>
+<tr>
+<td><code>src/twitch.js</code></td>
+<td>Chat IRC (votes, <code>!temps</code>, <code>!regie</code>, récompenses via <code>custom-reward-id</code>)</td>
+<td>Écrit, non testé en réel</td>
+</tr>
+<tr>
+<td><code>src/llm.js</code></td>
+<td>Couche Claude optionnelle (API Messages, suggestion de plan toutes les 45 s)</td>
+<td>Écrit, non testé en réel</td>
+</tr>
+<tr>
+<td><code>src/server.js</code></td>
+<td>HTTP + WebSocket : pages, <code>/api/agent</code>, <code>/api/state</code>, <code>/api/cmd</code> (Stream Deck), diffusion d'état</td>
+<td>Testé en <code>--no-obs</code></td>
+</tr>
+<tr>
+<td><code>agent/agent.mjs</code></td>
+<td>Agent sur chaque PC joueur : lit <code>WoWCombatLog*.txt</code> en tail, classe les événements, POST vers la régie</td>
+<td>Parser testé sur log synthétique</td>
+</tr>
+<tr>
+<td><code>public/panel.html</code></td>
+<td>Panneau complet (tablette) avec vignettes</td>
+<td>OK</td>
+</tr>
+<tr>
+<td><code>public/dock.html</code></td>
+<td><strong>Dock OBS v1 — trop simple, à remplacer</strong></td>
+<td>À refaire (voir §5)</td>
+</tr>
+<tr>
+<td><code>public/joueur.html</code></td>
+<td>Bouton « privé » sur téléphone du joueur</td>
+<td>OK</td>
+</tr>
+<tr>
+<td><code>public/overlay-tags.html</code></td>
+<td>Noms des joueurs sur les POV (browser source PC POV, <code>?slot=A/B</code>)</td>
+<td>OK</td>
+</tr>
+<tr>
+<td><code>public/overlay-stream.html</code></td>
+<td>Vote, projecteur, classement (browser source PC Stream)</td>
+<td>OK</td>
+</tr>
+<tr>
+<td><code>scripts/setup-obs.js</code></td>
+<td>Crée scènes/sources, force SRT « ouvert hors antenne », ajoute overlay</td>
+<td>Écrit, non testé</td>
+</tr>
+<tr>
+<td><code>scripts/simulate.js</code></td>
+<td>Simule 10 h sans OBS</td>
+<td>OK</td>
+</tr>
+<tr>
+<td><code>config.example.json</code></td>
+<td>Toute la configuration</td>
+<td>OK</td>
+</tr>
+</tbody>
+</table>
+<p>Commandes : <code>npm install</code> · <code>npm start</code> · <code>npm start -- --no-obs</code> · <code>npm run simu</code> · <code>npm run setup-obs -- --regie http://IP:8080</code></p>
+<h2>4. Logique clé (à conserver)</h2>
+<h3>Score et décision (mode AUTO)</h3>
+<ul>
+<li>Intérêt par joueur, demi-vie <strong>8 s</strong>, plafonné à 10. Poids d'événements :
+  <code>boss_start 5 · death 4.5 · boss_kill 4 · level 3.5 · boss_wipe 3 · shout 1.2 · kill 1 · res 1 · interrupt 0.5 · dmg_in 0.2 · dmg_out 0.12 · heal 0.04 · cast 0.03</code></li>
+<li><strong>Priorité</strong> = <code>intérêt + fairness × hotThreshold × 1.5 × dette_normalisée</code> (dette normalisée sur ±300 s).</li>
+<li>Choix du plan : ≥ 4 joueurs chauds ou pull de boss à ≥ 4 → <strong>QUAD</strong> · 2 chauds → <strong>SPLIT</strong> · 1 chaud (+ un actif) → <strong>PIP</strong>, sinon <strong>FULL</strong> · calme → FULL du joueur le plus en retard · calme + 12 min → <strong>MOSAÏQUE 20 s</strong> · calme + 20 min ou ½ AFK → <strong>PIÈCE</strong>.</li>
+<li>Anti-zapping : min <strong>25 s</strong> par plan, <strong>7 s</strong> si urgent (mort/boss hors champ), max <strong>150 s</strong>, nouveau plan doit être <strong>&gt; 1,3× + 0,4</strong> meilleur.</li>
+<li>Joueur <strong>privé</strong> → retiré immédiatement, <strong>même en MANUEL ou verrouillé</strong>.</li>
+</ul>
+<h3>Équité</h3>
+<ul>
+<li>Temps d'écran pondéré : FULL 1 · SPLIT 0,5 chacun · PIP 0,75 / 0,25 · QUAD 0,25 · MOSAÏQUE 0,125 · PIÈCE 0.</li>
+<li>Multiplié par la place laissée au jeu par les casters : OFF 1 · PIP 0,9 · SPLIT 0,5 · FULL 0,25.</li>
+<li>Dette = cible (<code>total distribué / 8</code>) − temps reçu. Sauvegarde toutes les 30 s.</li>
+<li>Simulation 10 h : équité 0,6 → <strong>écart max ≈ 3–5 min</strong> ; équité 0 → le plus actif prend <strong>41 %</strong>.</li>
+</ul>
+<h3>Répartition des plans entre les deux PC</h3>
+<ul>
+<li>PIÈCE : <strong>PC Stream</strong> affiche la cam pièce à la place de la capture jeu ; <strong>PC POV ne bouge pas</strong>.</li>
+<li>MOSAÏQUE : PC POV fait la grille 3×3 <strong>case centrale vide</strong> ; PC Stream pose la cam pièce au centre après <code>pc2.syncDelayMs</code> (350 ms) pour attendre la transition HDMI.</li>
+<li>Casters (PC Stream) : OFF / PIP (haut-droite 480×270) / SPLIT / FULL (jeu en vignette bas-droite). Ordre z : jeu &lt; pièce &lt; casters, inversé en FULL.</li>
+<li>Casters AUTO : absent → OFF · présent → PIP · parle depuis 15 s et jeu calme → FULL · action en jeu → PIP. Tenue min 8 s.</li>
+<li>Présence : diff moyenne en niveaux de gris vs photo « siège vide » (calibrage), seuil 0,09 ; 2 frames présent / 5 frames absent.</li>
+</ul>
+<h3>Chat</h3>
+<ul>
+<li>Vote 90 s, dernier vote par viewer compte. Gagnant → FULL ; 2e → PIP s'il a ≥ 30 % des voix du gagnant. Pondération par dette (×0,7 à ×1,3), gagnant précédent ×0,5. Aucun vote → l'IA garde la main.</li>
+<li>Points de chaîne (récompense avec texte) : <code>spotlight</code> (60 s), <code>split</code> (2 au hasard), <code>mosaic</code>. Mapping <code>config.twitch.rewards { id: action }</code>. En MANUEL, les projecteurs attendent validation.</li>
+<li>Planning : CHAT de hh:00 à hh:15, retour AUTO ensuite.</li>
+</ul>
+<h2>5. Tâche principale : refaire le dock OBS (<code>public/dock.html</code>)</h2>
+<p>Le dock doit <strong>régler presque tout en direct</strong>, sans redémarrer. Référence visuelle : maquette « Régie Forever » (artifact). Style : sombre, sobre, type Apple, accent or <code>#e9b44c</code>, rouge antenne <code>#ff453a</code>, police Geist / système.</p>
+<p>Six onglets :</p>
+<ol>
+<li><strong>Antenne</strong> — mode AUTO / CHAT / MANUEL (+ prochain passage planifié), verrou, plan à l'antenne + raison + barre de tenue (x / max), suggestion IA « Prendre », sélecteur de plan avec pictogrammes (Plein, Split, PIP, Quad, Mosaïque, Pièce) puis tap joueurs, grille 8 joueurs (intérêt, dette ±min, LIVE, privé, AFK), actions rapides (classement à l'écran, lancer projecteur).</li>
+<li><strong>Réalisation</strong> — curseurs : durée min plan, coupe urgente après, durée max, exigence pour couper (%), seuil « en action », seuil « calme », AFK après ; mosaïque toutes les X min + durée ; plan pièce toutes les X min + durée ; plan pièce si ½ AFK ; coin du PIP joueur ; transition PC POV (coupe / fondu / stinger + durée) ; Claude on/off + fréquence.</li>
+<li><strong>PC Stream</strong> — mode casters AUTO/OFF/PIP/SPLIT/FULL + mini-aperçu de composition ; jauge de présence live + seuil + bouton calibrer ; VU micros casters + seuil de parole (dB) + couper micros si absent ; plein écran auto (on/off, après X s de parole, tenue min) ; coin, taille et durée d'animation de l'incrustation casters ; cam pièce au centre de la mosaïque (on/off), délai synchro HDMI (ms) + bouton « tester la synchro ».</li>
+<li><strong>Chat</strong> — vote en cours (compte à rebours, top 3, relancer) ; durée du vote, seuil 2e en PIP, favoriser joueurs en retard, autoriser mosaïque / pièce ; points de chaîne (liste, récompenses inconnues → bouton « Associer »), durée projecteur, validation en manuel ; planning horaire visuel (début + durée du créneau CHAT) ; bot annonce / modos <code>!regie</code>.</li>
+<li><strong>Équité</strong> — curseur équité, objectif actuel, plus grand écart, tableau par joueur (temps, retard/avance), poids des plans, fréquence du classement à l'écran, remise à zéro avec confirmation intégrée (pas de <code>confirm()</code>).</li>
+<li><strong>Système</strong> — état des connexions (PC POV, PC Stream, Twitch, Claude), état des <strong>8 flux SRT</strong> (débit, latence, pertes), état des <strong>agents combat log</strong> (dernier message), dernière sauvegarde.</li>
+</ol>
+<h3>Ce que ça implique côté serveur</h3>
+<ul>
+<li>Nouvelle commande WebSocket <code>set</code> : <code>{ cmd: 'set', path: 'director.minHoldSec', value: 30 }</code> avec liste blanche de chemins, validation des bornes, application immédiate (le directeur lit <code>this.d</code> / <code>this.cfg</code> à chaque tick — vérifier les valeurs copiées au constructeur comme <code>fairness</code>).</li>
+<li>Persister les réglages modifiés dans <code>data/settings.json</code> (surcharge de <code>config.json</code> au démarrage), ne pas réécrire <code>config.json</code>.</li>
+<li>Rendre paramétrables ce qui est codé en dur aujourd'hui : coin/taille du PIP casters (recalcul de <code>pc2.layouts.PIP</code>), exigence de coupe (<code>1.3 / 0.4</code> dans <code>director.evaluate</code>), seuil du 2e en PIP (0,3 dans <code>resolveVote</code>), durée de tenue min casters, options chat (mosaïque/pièce autorisées).</li>
+<li>Transition PC POV : <code>SetCurrentSceneTransition</code> + <code>SetCurrentSceneTransitionDuration</code> sur Pc1.</li>
+<li>Stats SRT : <code>GetMediaInputStatus</code> ne donne pas le débit ; envisager <code>GetStats</code> global + présence d'image (diff des captures) comme indicateur « flux vivant ». Ne pas inventer de métriques indisponibles : afficher ce qu'OBS fournit réellement.</li>
+<li>Exposer dans l'état : niveaux micros casters (dB), <code>presenceDiff</code>, dernier contact par agent, prochain créneau planifié.</li>
+<li>Endpoint « tester la synchro » : force MOSAIC 3 s puis revient au plan précédent.</li>
+</ul>
+<h2>6. Autres points ouverts</h2>
+<ul>
+<li><strong>Rien n'a été testé contre de vrais OBS</strong> : à faire en priorité avec 2 instances OBS (ou une seule en local pour les deux rôles).</li>
+<li>Format du combat log WoW Forever <strong>supposé identique</strong> au client moderne (flags <code>0x511</code>, <code>ENCOUNTER_START/END</code>, <code>UNIT_DIED</code>). Vérifier avec <code>node agent/agent.mjs --test &lt;log réel&gt;</code>.</li>
+<li>Le dossier d'install de WoW Forever (<code>_forever_</code> ?) est deviné dans <code>agent.mjs</code> → option <code>--logs</code> en secours.</li>
+<li>SRT : même latence sur les 8 flux ; <code>close_when_inactive: false</code> et <code>restart_on_activate: false</code> sur les Sources média.</li>
+<li>Aucun mot de passe sur le panneau : réseau local uniquement.</li>
+<li>Couche Claude : modèle <code>claude-haiku-5-5</code> par défaut, clé via <code>ANTHROPIC_API_KEY</code>.</li>
+</ul>
+<h2>7. Critères d'acceptation</h2>
+<ul>
+<li><code>npm start -- --no-obs</code> : le dock s'ouvre sur <code>/dock</code>, chaque réglage modifie l'état en direct (visible dans <code>/api/state</code>) et survit à un redémarrage.</li>
+<li>Largeur du dock OBS ~340–420 px : aucun débordement horizontal, onglets défilables.</li>
+<li><code>npm run simu</code> reste à un écart &lt; 6 min avec équité 0,6.</li>
+<li>Aucun <code>alert()</code> / <code>confirm()</code> dans les pages (le dock tourne dans OBS CEF).</li>
+</ul>
+</main></body></html>

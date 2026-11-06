@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ma POV</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0d0f14; color: #e8ebf1; font-family: system-ui, sans-serif; text-align: center; }
+  .wrap { padding: 24px; width: 100%; max-width: 420px; }
+  h1 { margin: 0 0 6px; font-size: 26px; }
+  .live { color: #ff3b4e; font-weight: 800; letter-spacing: .1em; min-height: 1.4em; }
+  button { width: 100%; padding: 28px; font-size: 22px; font-weight: 800; border-radius: 18px; border: 0; margin: 22px 0; }
+  .vis { background: #2fd27a; color: #062; }
+  .priv { background: #ff3b4e; color: #fff; }
+  p { color: #8a93a6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="name">…</h1>
+  <div class="live" id="live"></div>
+  <button id="btn" class="vis">…</button>
+  <p id="time"></p>
+  <p>Passe en privé pour sortir ta POV de l'antenne (téléphone, Discord, pause pipi…).</p>
+</div>
+<script>
+const p = +new URLSearchParams(location.search).get('p') - 1;
+let me = null, ws;
+function connect() {
+  ws = new WebSocket(`ws://${location.host}/ws?role=joueur&p=${p + 1}`);
+  ws.onmessage = e => {
+    const m = JSON.parse(e.data);
+    if (m.type !== 'state') return;
+    me = m.state.players[p]; if (!me) return;
+    document.getElementById('name').textContent = `${p + 1}. ${me.name}`;
+    document.getElementById('live').textContent = me.shown ? '● À L\'ANTENNE' : '';
+    const b = document.getElementById('btn');
+    b.textContent = me.private ? '🔒 PRIVÉ — toucher pour revenir' : '👁 VISIBLE — passer en privé';
+    b.className = me.private ? 'priv' : 'vis';
+    const s = Math.round(me.screenTime);
+    document.getElementById('time').textContent = `Temps d'écran : ${Math.floor(s / 60)} min ${s % 60} s`;
+  };
+  ws.onclose = () => setTimeout(connect, 1500);
+}
+document.getElementById('btn').onclick = () => me && ws.send(JSON.stringify({ cmd: 'private', i: p, value: !me.private }));
+connect();
+</script>
+</body>
+</html>

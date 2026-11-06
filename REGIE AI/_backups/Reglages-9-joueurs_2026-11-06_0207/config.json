@@ -1,0 +1,187 @@
+{
+  "port": 8081,
+  "obsEnabled": false,
+  "players": [
+    {
+      "name": "xams",
+      "source": "POV 1",
+      "mic": null
+    },
+    {
+      "name": "yaourt",
+      "source": "POV 2",
+      "mic": null
+    },
+    {
+      "name": "shyne",
+      "source": "POV 3",
+      "mic": null
+    },
+    {
+      "name": "keamy",
+      "source": "POV 4",
+      "mic": null
+    },
+    {
+      "name": "tioneb",
+      "source": "POV 5",
+      "mic": null
+    },
+    {
+      "name": "erimghul",
+      "source": "POV 6",
+      "mic": null
+    },
+    {
+      "name": "darky",
+      "source": "POV 7",
+      "mic": null
+    },
+    {
+      "name": "fuego",
+      "source": "POV 8",
+      "mic": null
+    },
+    {
+      "name": "billy",
+      "source": "POV 9",
+      "mic": null
+    }
+  ],
+  "pc1": {
+    "_info": "PC qui récupère les 8 POV en SRT et sort en HDMI vers le PC Stream. Test local : même OBS que pc2.",
+    "url": "ws://127.0.0.1:4455",
+    "password": "lanppart",
+    "scenes": [
+      "REGIE_A",
+      "REGIE_B"
+    ],
+    "tagsSource": "REGIE_TAGS",
+    "canvas": [
+      1920,
+      1080
+    ],
+    "pipCorner": "bottom-left",
+    "screenshotEverySec": 2
+  },
+  "pc2": {
+    "_info": "PC Stream : overlays, micros, cam casters, cam pièce, envoi Twitch. Test local : même OBS que pc1.",
+    "url": "ws://127.0.0.1:4455",
+    "password": "",
+    "scene": "LIVE",
+    "gameSource": "Capture HDMI",
+    "casterCam": "Cam Caster",
+    "roomCam": "Cam Piece",
+    "syncDelayMs": 350,
+    "casterMics": [
+      "Mic Caster 1",
+      "Mic Caster 2"
+    ],
+    "muteMicsWhenAbsent": false,
+    "speakingDb": -35,
+    "presenceThreshold": 0.09,
+    "canvas": [
+      1920,
+      1080
+    ],
+    "tweenMs": 450,
+    "layouts": {
+      "OFF": {
+        "game": [
+          0,
+          0,
+          1920,
+          1080
+        ],
+        "cam": null
+      },
+      "PIP": {
+        "game": [
+          0,
+          0,
+          1920,
+          1080
+        ],
+        "cam": [
+          1400,
+          40,
+          480,
+          270
+        ]
+      },
+      "SPLIT": {
+        "game": [
+          16,
+          274,
+          936,
+          527
+        ],
+        "cam": [
+          968,
+          274,
+          936,
+          527
+        ]
+      },
+      "FULL": {
+        "game": [
+          1420,
+          770,
+          460,
+          259
+        ],
+        "cam": [
+          0,
+          0,
+          1920,
+          1080
+        ]
+      }
+    }
+  },
+  "director": {
+    "evalEverySec": 2,
+    "minHoldSec": 25,
+    "urgentMinHoldSec": 7,
+    "maxHoldSec": 150,
+    "hotThreshold": 3,
+    "calmThreshold": 1.2,
+    "fairness": 0.6,
+    "debtScaleSec": 300,
+    "afkAfterSec": 60,
+    "mosaicEveryMin": 12,
+    "mosaicDurationSec": 20,
+    "roomEveryMin": 20,
+    "roomDurationSec": 15,
+    "spotlightSec": 60,
+    "screenTimeBoardEveryMin": 30
+  },
+  "casters": {
+    "autoFull": true,
+    "fullAfterTalkSec": 15,
+    "minHoldSec": 8
+  },
+  "twitch": {
+    "channel": "",
+    "botUsername": "",
+    "oauthToken": "",
+    "announce": true,
+    "voteSeconds": 90,
+    "rewards": {
+      "_exemple-id-recompense": "spotlight"
+    }
+  },
+  "llm": {
+    "enabled": false,
+    "apiKey": "",
+    "model": "claude-haiku-5-5",
+    "everySec": 45
+  },
+  "schedule": [
+    {
+      "minute": 0,
+      "durationMin": 15,
+      "mode": "CHAT"
+    }
+  ]
+}

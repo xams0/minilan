@@ -1,0 +1,4 @@
+2026/11/04 13:23:17 INF MediaMTX v1.18.2, windows, amd64
+2026/11/04 13:23:17 INF configuration loaded from C:\Users\maxim\Desktop\miniLAN\Server MediaMTX\logs\mediamtx-run.yml
+2026/11/04 13:23:17 INF [SRT] listener opened on :8890 (UDP)
+2026/11/04 13:23:17 INF [API] listener opened on :9997 (TCP/HTTP)

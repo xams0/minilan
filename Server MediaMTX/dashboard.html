@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaMTX — LAN eSport</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0e1a;
+      color: #c8d8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #0d1b2e 0%, #0a1628 100%);
+      border-bottom: 1px solid #1a3a5c;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 14px; }
+
+    .logo {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #1e6fbd, #0d4a8a);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 800; color: #fff;
+      box-shadow: 0 0 16px rgba(30, 111, 189, 0.4);
+    }
+
+    h1 { font-size: 18px; font-weight: 600; color: #e8f0ff; letter-spacing: 0.3px; }
+    h1 span { color: #4a9eff; }
+
+    .header-right { display: flex; align-items: center; gap: 20px; }
+
+    .stat-pill {
+      background: #0d1b2e;
+      border: 1px solid #1a3a5c;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 13px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .stat-pill .count { font-weight: 700; font-size: 16px; }
+    .stat-pill.online .count { color: #22d3a0; }
+    .stat-pill.offline .count { color: #4a6080; }
+
+    .refresh-badge {
+      font-size: 12px; color: #4a6080;
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    .pulse {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #4a9eff;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    /* ── Grid ── */
+    main { padding: 28px 32px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: #0d1828;
+      border: 1px solid #182840;
+      border-radius: 12px;
+      padding: 18px;
+      transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: #182840;
+      transition: background 0.3s;
+    }
+
+    .card.online {
+      border-color: #0d4a2a;
+      box-shadow: 0 0 20px rgba(34, 211, 160, 0.08);
+    }
+
+    .card.online::before { background: linear-gradient(90deg, #22d3a0, #1aad80); }
+
+    .card:hover { transform: translateY(-2px); }
+
+    .card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .player-id {
+      font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
+      text-transform: uppercase; color: #4a6080;
+    }
+
+    .status-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: #1e3048;
+      border: 2px solid #243850;
+      transition: all 0.3s;
+    }
+
+    .card.online .status-dot {
+      background: #22d3a0;
+      border-color: #22d3a0;
+      box-shadow: 0 0 8px rgba(34, 211, 160, 0.6);
+      animation: glow 2s ease-in-out infinite;
+    }
+
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 6px rgba(34, 211, 160, 0.5); }
+      50% { box-shadow: 0 0 14px rgba(34, 211, 160, 0.9); }
+    }
+
+    .player-name {
+      font-size: 20px; font-weight: 700;
+      color: #8ab4e0;
+      margin-bottom: 14px;
+      transition: color 0.3s;
+    }
+
+    .card.online .player-name { color: #e8f4ff; }
+
+    .status-label {
+      font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+      color: #2a4060;
+      transition: color 0.3s;
+    }
+
+    .card.online .status-label { color: #22d3a0; }
+
+    .divider {
+      height: 1px; background: #182840;
+      margin: 14px 0;
+    }
+
+    .metrics { display: flex; flex-direction: column; gap: 8px; }
+
+    .metric {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .metric-label { font-size: 11px; color: #2e4a6a; }
+    .metric-value { font-size: 12px; font-weight: 600; color: #3a5a80; font-family: monospace; }
+    .card.online .metric-label { color: #4a7a9a; }
+    .card.online .metric-value { color: #7ab8e8; }
+
+    .tracks-badge {
+      margin-top: 12px;
+      background: #0a1420;
+      border: 1px solid #182840;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px; color: #2e4a6a;
+      font-family: monospace;
+      min-height: 30px;
+      transition: all 0.3s;
+      word-break: break-all;
+    }
+
+    .card.online .tracks-badge {
+      border-color: #0d4a2a;
+      color: #4a9a70;
+      background: #061410;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+      color: #1e3048;
+      border-top: 1px solid #0f1e30;
+      margin-top: 12px;
+    }
+
+    /* ── Error banner ── */
+    #error-banner {
+      display: none;
+      background: #1a0a0a;
+      border: 1px solid #5a1a1a;
+      border-radius: 8px;
+      padding: 12px 20px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #e05050;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">M</div>
+    <h1>Media<span>MTX</span> — LAN eSport</h1>
+  </div>
+  <div class="header-right">
+    <div class="stat-pill online">
+      <span>EN LIGNE</span>
+      <span class="count" id="count-online">0</span>
+    </div>
+    <div class="stat-pill offline">
+      <span>HORS LIGNE</span>
+      <span class="count" id="count-offline">16</span>
+    </div>
+    <div class="refresh-badge">
+      <div class="pulse"></div>
+      <span id="last-update">—</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="error-banner">Impossible de contacter MediaMTX sur 127.0.0.1:9997 — vérifier que le serveur tourne.</div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>MediaMTX v1.18.2 &nbsp;·&nbsp; SRT :8890 &nbsp;·&nbsp; API :9997 &nbsp;·&nbsp; Refresh 2s</footer>
+
+<script>
+  const API = '/api/paths';
+
+  function formatBytes(b) {
+    if (!b || b === 0) return '—';
+    if (b < 1024) return b + ' B';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+    return (b / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function formatTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleTimeString('fr-FR');
+  }
+
+  function buildCard(path) {
+    const online = path.ready === true;
+    const num = path.name.replace('joueur', '');
+    return `
+      <div class="card ${online ? 'online' : ''}" id="card-${path.name}">
+        <div class="card-header">
+          <span class="player-id">JOUEUR ${num.padStart(2,'0')}</span>
+          <span class="status-dot"></span>
+        </div>
+        <div class="player-name">${path.name}</div>
+        <div class="status-label">${online ? '● LIVE' : '○ EN ATTENTE'}</div>
+        <div class="divider"></div>
+        <div class="metrics">
+          <div class="metric">
+            <span class="metric-label">Reçu</span>
+            <span class="metric-value">${formatBytes(path.bytesReceived)}</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Envoyé</span>
+            <span class="metric-value">${formatBytes(path.bytesSent)}</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Connecté à</span>
+            <span class="metric-value">${formatTime(path.onlineTime)}</span>
+          </div>
+        </div>
+        <div class="tracks-badge">${path.tracks || 'aucun flux actif'}</div>
+      </div>`;
+  }
+
+  async function refresh() {
+    try {
+      const res = await fetch(API);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      document.getElementById('error-banner').style.display = 'none';
+
+      const items = (data.items || []).sort((a, b) => {
+        const na = parseInt(a.name.replace('joueur','')) || 0;
+        const nb = parseInt(b.name.replace('joueur','')) || 0;
+        return na - nb;
+      });
+
+      const grid = document.getElementById('grid');
+      grid.innerHTML = items.map(buildCard).join('');
+
+      const onlineCount = items.filter(p => p.ready).length;
+      document.getElementById('count-online').textContent = onlineCount;
+      document.getElementById('count-offline').textContent = items.length - onlineCount;
+      document.getElementById('last-update').textContent =
+        new Date().toLocaleTimeString('fr-FR');
+
+    } catch (e) {
+      document.getElementById('error-banner').style.display = 'block';
+    }
+  }
+
+  refresh();
+  setInterval(refresh, 2000);
+</script>
+</body>
+</html>

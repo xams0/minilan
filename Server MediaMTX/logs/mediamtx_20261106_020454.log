@@ -1,0 +1,12 @@
+2026/11/06 02:04:54 INF MediaMTX v1.18.2, windows, amd64
+2026/11/06 02:04:54 INF configuration loaded from C:\Users\maxim\Desktop\miniLAN\Server MediaMTX\logs\mediamtx-run.yml
+2026/11/06 02:04:54 INF [SRT] listener opened on :8890 (UDP)
+2026/11/06 02:04:54 INF [API] listener opened on :9997 (TCP/HTTP)
+2026/11/06 02:04:56 INF [SRT] [conn 127.0.0.1:55064] opened
+2026/11/06 02:04:57 INF [path xams] stream is available and online, 3 tracks (H264, MPEG-4 Audio, MPEG-4 Audio)
+2026/11/06 02:04:57 INF [SRT] [conn 127.0.0.1:55064] is publishing to path 'xams'
+2026/11/06 02:05:00 INF [SRT] [conn 127.0.0.1:55064] closed: EOF
+2026/11/06 02:05:01 INF [SRT] [conn 127.0.0.1:57114] opened
+2026/11/06 02:05:01 INF [path xams] stream is available and online, 3 tracks (H264, MPEG-4 Audio, MPEG-4 Audio)
+2026/11/06 02:05:01 INF [SRT] [conn 127.0.0.1:57114] is publishing to path 'xams'
+2026/11/06 12:37:49 INF [SRT] [conn 127.0.0.1:57114] closed: EOF

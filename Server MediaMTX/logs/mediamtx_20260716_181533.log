@@ -1,0 +1,179 @@
+2026/07/16 18:15:33 INF MediaMTX v1.18.2, windows, amd64
+2026/07/16 18:15:33 INF configuration loaded from C:\Users\maxim\Desktop\SRT Audio Receiver from MTX\Server MediaMTX\logs\mediamtx-run.yml
+2026/07/16 18:15:33 INF [SRT] listener opened on :8890 (UDP)
+2026/07/16 18:15:33 INF [API] listener opened on :9997 (TCP/HTTP)
+2026/07/16 18:15:33 INF [SRT] [conn 192.168.1.19:61361] opened
+2026/07/16 18:15:34 INF [path xams] stream is available and online, 3 tracks (H264, MPEG-4 Audio, MPEG-4 Audio)
+2026/07/16 18:15:34 INF [SRT] [conn 192.168.1.19:61361] is publishing to path 'xams'
+2026/07/16 18:15:34 INF [SRT] [conn 192.168.1.15:49806] opened
+2026/07/16 18:15:34 INF [SRT] [conn 192.168.1.15:49806] is reading from path 'xams', 3 tracks (H264, MPEG-4 Audio, MPEG-4 Audio)
+2026/07/16 18:15:34 INF [SRT] [conn 192.168.1.15:49807] opened
+2026/07/16 18:15:34 INF [SRT] [conn 192.168.1.15:49807] closed: no stream is available on path 'cam1'
+2026/07/16 18:15:35 INF [SRT] [conn 192.168.1.15:49808] opened
+2026/07/16 18:15:35 INF [SRT] [conn 192.168.1.15:49808] closed: no stream is available on path 'cam1'
+2026/07/16 18:15:36 INF [SRT] [conn 192.168.1.15:49809] opened
+2026/07/16 18:15:36 INF [SRT] [conn 192.168.1.15:49809] closed: no stream is available on path 'cam1'
+2026/07/16 18:15:37 INF [SRT] [conn 192.168.1.15:49810] opened
+2026/07/16 18:15:37 INF [SRT] [conn 192.168.1.15:49810] closed: no stream is available on path 'cam1'
+2026/07/16 18:15:38 INF [SRT] [conn 192.168.1.15:49811] opened
+2026/07/16 18:15:38 INF [SRT] [conn 192.168.1.15:49811] closed: no stream is available on path 'cam1'
+2026/07/16 18:15:39 INF [SRT] [conn 192.168.1.15:49812] opened
+2026/07/16 18:15:39 INF [SRT] [conn 192.168.1.15:49812] closed: no stream is available on path 'cam1'
+2026/07/16 18:15:40 INF [SRT] [conn 192.168.1.15:49813] opened
+2026/07/16 18:15:40 INF [SRT] [conn 192.168.1.15:49813] closed: no stream is available on path 'cam1'
+2026/07/16 18:15:41 INF [SRT] [conn 192.168.1.15:49814] opened
+2026/07/16 18:15:41 INF [SRT] [conn 192.168.1.15:49814] closed: no stream is available on path 'cam1'
+2026/07/16 18:15:41 INF [SRT] [conn 192.168.1.47:61625] opened
+2026/07/16 18:15:42 INF [path cam1] stream is available and online, 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 18:15:42 INF [SRT] [conn 192.168.1.47:61625] is publishing to path 'cam1'
+2026/07/16 18:15:42 INF [SRT] [conn 192.168.1.15:49815] opened
+2026/07/16 18:15:42 INF [SRT] [conn 192.168.1.15:49815] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 18:17:28 INF [SRT] [conn 192.168.1.15:49815] closed: too many reordered frames (29)
+2026/07/16 18:17:29 INF [SRT] [conn 192.168.1.15:60318] opened
+2026/07/16 18:17:29 INF [SRT] [conn 192.168.1.15:60318] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 18:26:03 INF [SRT] [conn 192.168.1.15:49806] closed: EOF
+2026/07/16 18:26:06 INF [SRT] [conn 192.168.1.15:53870] opened
+2026/07/16 18:26:06 INF [SRT] [conn 192.168.1.15:53870] is reading from path 'xams', 3 tracks (H264, MPEG-4 Audio, MPEG-4 Audio)
+2026/07/16 18:26:06 INF [SRT] [conn 192.168.1.15:53871] opened
+2026/07/16 18:26:06 INF [SRT] [conn 192.168.1.15:53871] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 18:26:06 INF [SRT] [conn 192.168.1.15:60318] closed: EOF
+2026/07/16 18:26:09 INF [SRT] [conn 192.168.1.15:53871] closed: EOF
+2026/07/16 18:26:10 INF [SRT] [conn 192.168.1.15:53874] opened
+2026/07/16 18:26:10 INF [SRT] [conn 192.168.1.15:53874] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 18:31:31 INF [SRT] [conn 192.168.1.15:64797] opened
+2026/07/16 18:31:31 INF [SRT] [conn 192.168.1.15:64798] opened
+2026/07/16 18:31:31 INF [SRT] [conn 192.168.1.15:64797] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 18:31:31 INF [SRT] [conn 192.168.1.15:64798] is reading from path 'xams', 3 tracks (H264, MPEG-4 Audio, MPEG-4 Audio)
+2026/07/16 18:31:51 INF [SRT] [conn 192.168.1.15:64798] closed: EOF
+2026/07/16 18:31:51 INF [SRT] [conn 192.168.1.15:64797] closed: EOF
+2026/07/16 18:32:27 INF [SRT] [conn 192.168.1.15:64813] opened
+2026/07/16 18:32:27 INF [SRT] [conn 192.168.1.15:64813] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 18:34:32 INF [SRT] [conn 192.168.1.15:53874] closed: EOF
+2026/07/16 18:34:33 INF [SRT] [conn 192.168.1.15:51429] opened
+2026/07/16 18:34:33 INF [SRT] [conn 192.168.1.15:51429] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 19:04:10 INF [SRT] [conn 192.168.1.15:51429] closed: too many reordered frames (29)
+2026/07/16 19:04:10 INF [SRT] [conn 192.168.1.15:64813] closed: too many reordered frames (29)
+2026/07/16 19:04:11 INF [SRT] [conn 192.168.1.15:51109] opened
+2026/07/16 19:04:11 INF [SRT] [conn 192.168.1.15:51109] is reading from path 'cam1', 2 tracks (MPEG-4 Audio, H264)
+2026/07/16 19:04:11 INF [SRT] [conn 192.168.1.15:51110] opened
+2026/07/16 19:04:11 INF [SRT] [conn 192.168.1.15:51110] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 19:04:15 INF [SRT] [conn 192.168.1.15:51109] closed: too many reordered frames (29)
+2026/07/16 19:04:15 INF [SRT] [conn 192.168.1.15:51110] closed: too many reordered frames (29)
+2026/07/16 19:04:16 INF [SRT] [conn 192.168.1.15:51111] opened
+2026/07/16 19:04:16 INF [SRT] [conn 192.168.1.15:51111] is reading from path 'cam1', 2 tracks (MPEG-4 Audio, H264)
+2026/07/16 19:04:16 INF [SRT] [conn 192.168.1.15:51112] opened
+2026/07/16 19:04:16 INF [SRT] [conn 192.168.1.15:51112] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 19:04:23 INF [SRT] [conn 192.168.1.15:51111] closed: too many reordered frames (29)
+2026/07/16 19:04:23 INF [SRT] [conn 192.168.1.15:51112] closed: too many reordered frames (29)
+2026/07/16 19:04:24 INF [SRT] [conn 192.168.1.15:51113] opened
+2026/07/16 19:04:24 INF [SRT] [conn 192.168.1.15:51113] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 19:04:24 INF [SRT] [conn 192.168.1.15:51114] opened
+2026/07/16 19:04:24 INF [SRT] [conn 192.168.1.15:51114] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 19:07:11 INF [SRT] [conn 192.168.1.15:51113] closed: too many reordered frames (29)
+2026/07/16 19:07:11 INF [SRT] [conn 192.168.1.15:51114] closed: too many reordered frames (29)
+2026/07/16 19:07:12 INF [SRT] [conn 192.168.1.15:56240] opened
+2026/07/16 19:07:12 INF [SRT] [conn 192.168.1.15:56240] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 19:07:12 INF [SRT] [conn 192.168.1.15:56241] opened
+2026/07/16 19:07:12 INF [SRT] [conn 192.168.1.15:56241] is reading from path 'cam1', 2 tracks (MPEG-4 Audio, H264)
+2026/07/16 19:14:36 INF [SRT] [conn 192.168.1.15:53870] closed: EOF
+2026/07/16 19:14:37 INF [SRT] [conn 192.168.1.15:63347] opened
+2026/07/16 19:14:37 INF [SRT] [conn 192.168.1.15:63347] is reading from path 'xams', 3 tracks (H264, MPEG-4 Audio, MPEG-4 Audio)
+2026/07/16 19:18:15 INF [SRT] [conn 192.168.1.15:63347] closed: EOF
+2026/07/16 19:18:16 INF [SRT] [conn 192.168.1.15:51640] opened
+2026/07/16 19:18:16 INF [SRT] [conn 192.168.1.15:51640] is reading from path 'xams', 3 tracks (H264, MPEG-4 Audio, MPEG-4 Audio)
+2026/07/16 19:19:42 INF [SRT] [conn 192.168.1.15:56241] closed: too many reordered frames (29)
+2026/07/16 19:19:42 INF [SRT] [conn 192.168.1.15:56240] closed: too many reordered frames (29)
+2026/07/16 19:19:43 INF [SRT] [conn 192.168.1.15:65430] opened
+2026/07/16 19:19:43 INF [SRT] [conn 192.168.1.15:65430] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 19:19:43 INF [SRT] [conn 192.168.1.15:65431] opened
+2026/07/16 19:19:43 INF [SRT] [conn 192.168.1.15:65431] is reading from path 'cam1', 2 tracks (MPEG-4 Audio, H264)
+2026/07/16 19:31:58 INF [SRT] [conn 192.168.1.15:65431] closed: too many reordered frames (29)
+2026/07/16 19:31:58 INF [SRT] [conn 192.168.1.15:65430] closed: too many reordered frames (29)
+2026/07/16 19:31:59 INF [SRT] [conn 192.168.1.15:58896] opened
+2026/07/16 19:31:59 INF [SRT] [conn 192.168.1.15:58896] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 19:31:59 INF [SRT] [conn 192.168.1.15:58897] opened
+2026/07/16 19:31:59 INF [SRT] [conn 192.168.1.15:58897] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 19:34:14 INF [SRT] [conn 192.168.1.15:58896] closed: too many reordered frames (29)
+2026/07/16 19:34:14 INF [SRT] [conn 192.168.1.15:58897] closed: too many reordered frames (29)
+2026/07/16 19:34:15 INF [SRT] [conn 192.168.1.15:61065] opened
+2026/07/16 19:34:15 INF [SRT] [conn 192.168.1.15:61065] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 19:34:15 INF [SRT] [conn 192.168.1.15:61066] opened
+2026/07/16 19:34:15 INF [SRT] [conn 192.168.1.15:61066] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 19:34:28 INF [SRT] [conn 192.168.1.15:61065] closed: too many reordered frames (29)
+2026/07/16 19:34:28 INF [SRT] [conn 192.168.1.15:61066] closed: too many reordered frames (29)
+2026/07/16 19:34:29 INF [SRT] [conn 192.168.1.15:57966] opened
+2026/07/16 19:34:29 INF [SRT] [conn 192.168.1.15:57966] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 19:34:29 INF [SRT] [conn 192.168.1.15:57967] opened
+2026/07/16 19:34:29 INF [SRT] [conn 192.168.1.15:57967] is reading from path 'cam1', 2 tracks (H264, MPEG-4 Audio)
+2026/07/16 19:36:22 INF [SRT] [conn 192.168.1.19:61361] closed: EOF
+2026/07/16 19:36:22 INF [SRT] [conn 192.168.1.15:51640] closed: terminated
+2026/07/16 19:36:23 INF [SRT] [conn 192.168.1.15:63075] opened
+2026/07/16 19:36:23 INF [SRT] [conn 192.168.1.15:63075] closed: no stream is available on path 'xams'
+2026/07/16 19:36:24 INF [SRT] [conn 192.168.1.15:63076] opened
+2026/07/16 19:36:24 INF [SRT] [conn 192.168.1.15:63076] closed: no stream is available on path 'xams'
+2026/07/16 19:36:25 INF [SRT] [conn 192.168.1.15:63077] opened
+2026/07/16 19:36:25 INF [SRT] [conn 192.168.1.15:63077] closed: no stream is available on path 'xams'
+2026/07/16 19:36:26 INF [SRT] [conn 192.168.1.15:63078] opened
+2026/07/16 19:36:26 INF [SRT] [conn 192.168.1.15:63078] closed: no stream is available on path 'xams'
+2026/07/16 19:36:27 INF [SRT] [conn 192.168.1.15:63079] opened
+2026/07/16 19:36:27 INF [SRT] [conn 192.168.1.15:63079] closed: no stream is available on path 'xams'
+2026/07/16 19:36:28 INF [SRT] [conn 192.168.1.15:63080] opened
+2026/07/16 19:36:28 INF [SRT] [conn 192.168.1.15:63080] closed: no stream is available on path 'xams'
+2026/07/16 19:36:29 INF [SRT] [conn 192.168.1.15:63081] opened
+2026/07/16 19:36:29 INF [SRT] [conn 192.168.1.15:63081] closed: no stream is available on path 'xams'
+2026/07/16 19:36:30 INF [SRT] [conn 192.168.1.15:63082] opened
+2026/07/16 19:36:30 INF [SRT] [conn 192.168.1.15:63082] closed: no stream is available on path 'xams'
+2026/07/16 19:36:31 INF [SRT] [conn 192.168.1.15:63083] opened
+2026/07/16 19:36:31 INF [SRT] [conn 192.168.1.15:63083] closed: no stream is available on path 'xams'
+2026/07/16 19:36:32 INF [SRT] [conn 192.168.1.15:63084] opened
+2026/07/16 19:36:32 INF [SRT] [conn 192.168.1.15:63084] closed: no stream is available on path 'xams'
+2026/07/16 19:36:33 INF [SRT] [conn 192.168.1.15:63085] opened
+2026/07/16 19:36:33 INF [SRT] [conn 192.168.1.15:63085] closed: no stream is available on path 'xams'
+2026/07/16 19:36:34 INF [SRT] [conn 192.168.1.15:63086] opened
+2026/07/16 19:36:34 INF [SRT] [conn 192.168.1.15:63086] closed: no stream is available on path 'xams'
+2026/07/16 19:36:35 INF [SRT] [conn 192.168.1.15:51891] opened
+2026/07/16 19:36:35 INF [SRT] [conn 192.168.1.15:51891] closed: no stream is available on path 'xams'
+2026/07/16 19:36:36 INF [SRT] [conn 192.168.1.15:51892] opened
+2026/07/16 19:36:36 INF [SRT] [conn 192.168.1.15:51892] closed: no stream is available on path 'xams'
+2026/07/16 19:36:37 INF [SRT] [conn 192.168.1.15:51893] opened
+2026/07/16 19:36:37 INF [SRT] [conn 192.168.1.15:51893] closed: no stream is available on path 'xams'
+2026/07/16 19:36:38 INF [SRT] [conn 192.168.1.15:51894] opened
+2026/07/16 19:36:38 INF [SRT] [conn 192.168.1.15:51894] closed: no stream is available on path 'xams'
+2026/07/16 19:36:39 INF [SRT] [conn 192.168.1.15:51895] opened
+2026/07/16 19:36:39 INF [SRT] [conn 192.168.1.15:51895] closed: no stream is available on path 'xams'
+2026/07/16 19:36:40 INF [SRT] [conn 192.168.1.15:51896] opened
+2026/07/16 19:36:40 INF [SRT] [conn 192.168.1.15:51896] closed: no stream is available on path 'xams'
+2026/07/16 19:36:41 INF [SRT] [conn 192.168.1.15:51897] opened
+2026/07/16 19:36:41 INF [SRT] [conn 192.168.1.15:51897] closed: no stream is available on path 'xams'
+2026/07/16 19:36:42 INF [SRT] [conn 192.168.1.15:51898] opened
+2026/07/16 19:36:42 INF [SRT] [conn 192.168.1.15:51898] closed: no stream is available on path 'xams'
+2026/07/16 19:36:43 INF [SRT] [conn 192.168.1.15:51899] opened
+2026/07/16 19:36:43 INF [SRT] [conn 192.168.1.15:51899] closed: no stream is available on path 'xams'
+2026/07/16 19:36:44 INF [SRT] [conn 192.168.1.15:51900] opened
+2026/07/16 19:36:45 INF [SRT] [conn 192.168.1.15:51900] closed: no stream is available on path 'xams'
+2026/07/16 19:36:46 INF [SRT] [conn 192.168.1.15:51901] opened
+2026/07/16 19:36:46 INF [SRT] [conn 192.168.1.15:51901] closed: no stream is available on path 'xams'
+2026/07/16 19:36:47 INF [SRT] [conn 192.168.1.15:51902] opened
+2026/07/16 19:36:47 INF [SRT] [conn 192.168.1.15:51902] closed: no stream is available on path 'xams'
+2026/07/16 19:36:48 INF [SRT] [conn 192.168.1.15:51903] opened
+2026/07/16 19:36:48 INF [SRT] [conn 192.168.1.15:51903] closed: no stream is available on path 'xams'
+2026/07/16 19:36:49 INF [SRT] [conn 192.168.1.15:51904] opened
+2026/07/16 19:36:49 INF [SRT] [conn 192.168.1.15:51904] closed: no stream is available on path 'xams'
+2026/07/16 19:36:50 INF [SRT] [conn 192.168.1.15:51905] opened
+2026/07/16 19:36:50 INF [SRT] [conn 192.168.1.15:51905] closed: no stream is available on path 'xams'
+2026/07/16 19:36:51 INF [SRT] [conn 192.168.1.15:51906] opened
+2026/07/16 19:36:51 INF [SRT] [conn 192.168.1.15:51906] closed: no stream is available on path 'xams'
+2026/07/16 19:36:52 INF [SRT] [conn 192.168.1.15:51907] opened
+2026/07/16 19:36:52 INF [SRT] [conn 192.168.1.15:51907] closed: no stream is available on path 'xams'
+2026/07/16 19:36:53 INF [SRT] [conn 192.168.1.15:51908] opened
+2026/07/16 19:36:53 INF [SRT] [conn 192.168.1.15:51908] closed: no stream is available on path 'xams'
+2026/07/16 19:36:54 INF [SRT] [conn 192.168.1.15:51912] opened
+2026/07/16 19:36:54 INF [SRT] [conn 192.168.1.15:51912] closed: no stream is available on path 'xams'
+2026/07/16 19:36:55 INF [SRT] [conn 192.168.1.15:51913] opened
+2026/07/16 19:36:55 INF [SRT] [conn 192.168.1.15:51913] closed: no stream is available on path 'xams'
+2026/07/16 19:36:56 INF [SRT] [conn 192.168.1.15:57650] opened
+2026/07/16 19:36:56 INF [SRT] [conn 192.168.1.15:57650] closed: no stream is available on path 'xams'
+2026/07/16 19:36:57 INF [SRT] [conn 192.168.1.15:57651] opened
+2026/07/16 19:36:57 INF [SRT] [conn 192.168.1.15:57651] closed: no stream is available on path 'xams'
+2026/07/16 19:36:58 INF [SRT] [conn 192.168.1.15:57652] opened
+2026/07/16 19:36:58 INF [SRT] [conn 192.168.1.15:57652] closed: no stream is available on path 'xams'

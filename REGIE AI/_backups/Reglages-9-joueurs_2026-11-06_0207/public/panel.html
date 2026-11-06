@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Régie WoW</title>
+<style>
+  :root {
+    --bg: #0d0f14; --panel: #161a22; --panel2: #1d222c; --line: #2a303c;
+    --txt: #e8ebf1; --dim: #8a93a6; --accent: #f5b301; --live: #ff3b4e; --ok: #2fd27a; --info: #4aa3ff; --warn: #ff9d2e;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--bg); color: var(--txt); font-size: 15px; }
+  header { position: sticky; top: 0; z-index: 5; background: #0d0f14ee; backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+    padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  h1 { font-size: 16px; letter-spacing: .12em; margin: 0 8px 0 0; }
+  h1 b { color: var(--live); }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 12px; padding: 3px 8px; border-radius: 99px; background: var(--panel2); color: var(--dim); border: 1px solid var(--line); }
+  .chip.on { color: var(--ok); border-color: #2fd27a55; }
+  .seg { display: inline-flex; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .seg button { border: 0; background: none; color: var(--dim); padding: 9px 14px; font-weight: 700; font-size: 13px; letter-spacing: .05em; }
+  .seg button.sel { background: var(--accent); color: #111; }
+  .spacer { flex: 1; }
+  button { font: inherit; color: var(--txt); background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; cursor: pointer; }
+  button:active { transform: scale(.97); }
+  button.primary { background: var(--accent); color: #111; border-color: var(--accent); font-weight: 700; }
+  button.danger { color: var(--live); }
+  button.sel { outline: 2px solid var(--accent); }
+  .linkbtn { color: var(--txt); background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; text-decoration: none; }
+  main { padding: 14px 16px 40px; display: grid; gap: 14px; grid-template-columns: 1fr; max-width: 1400px; margin: 0 auto; }
+  @media (min-width: 1000px) { main { grid-template-columns: 2fr 1fr; } .wide { grid-column: 1 / -1; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  .card h2 { margin: 0 0 10px; font-size: 12px; letter-spacing: .14em; color: var(--dim); text-transform: uppercase; }
+  .onair { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .onair .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--live); box-shadow: 0 0 12px var(--live); animation: pulse 1.4s infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .onair .lbl { font-size: 20px; font-weight: 800; }
+  .reason { color: var(--dim); margin-top: 4px; }
+  .badge { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--panel2); border: 1px solid var(--line); color: var(--dim); text-transform: uppercase; letter-spacing: .08em; }
+  .sugg { margin-top: 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px; border-radius: 10px; background: #f5b30112; border: 1px dashed #f5b30166; }
+  .sugg[hidden] { display: none; }
+  .sugg .t { flex: 1; min-width: 200px; }
+  .composer { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+  .slots { color: var(--accent); font-weight: 700; margin-left: 6px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (min-width: 700px) { .grid { grid-template-columns: repeat(4, 1fr); } }
+  .tile { position: relative; border-radius: 12px; overflow: hidden; background: var(--panel2); border: 2px solid transparent; cursor: pointer; user-select: none; }
+  .tile.shown { border-color: var(--live); }
+  .tile.priv { opacity: .45; }
+  .tile.picked { border-color: var(--accent); }
+  .thumb { aspect-ratio: 16/9; background: #000 center/cover no-repeat; position: relative; }
+  .num { position: absolute; top: 6px; left: 6px; background: #000a; padding: 1px 7px; border-radius: 6px; font-weight: 800; font-size: 13px; }
+  .tags { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; }
+  .tags span { font-size: 10px; padding: 1px 5px; border-radius: 5px; background: #000b; }
+  .meta { padding: 8px 9px 9px; }
+  .name { font-weight: 700; display: flex; justify-content: space-between; gap: 6px; }
+  .bar { height: 5px; background: #0006; border-radius: 3px; margin: 6px 0 5px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--info), var(--accent), var(--live)); }
+  .row { display: flex; justify-content: space-between; font-size: 12px; color: var(--dim); }
+  .debt.pos { color: var(--warn); } .debt.neg { color: var(--ok); }
+  .privbtn { width: 100%; margin-top: 7px; padding: 6px; font-size: 12px; }
+  .caster { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+  .caster .thumb { width: 180px; border-radius: 10px; }
+  .vote .opt { display: grid; grid-template-columns: 110px 1fr 34px; gap: 8px; align-items: center; margin: 4px 0; font-size: 13px; }
+  .vote .opt .bar { margin: 0; height: 10px; }
+  .log { font: 12px ui-monospace, Menlo, Consolas, monospace; color: var(--dim); max-height: 260px; overflow: auto; white-space: pre-wrap; }
+  .muted { color: var(--dim); font-size: 13px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .flex { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  select { font: inherit; background: var(--panel2); color: var(--txt); border: 1px solid var(--line); border-radius: 8px; padding: 7px; }
+</style>
+</head>
+<body>
+<header>
+  <h1><b>●</b> RÉGIE</h1>
+  <div class="chips" id="chips"></div>
+  <div class="spacer"></div>
+  <div class="seg" id="modes">
+    <button data-mode="AUTO">AUTO IA</button><button data-mode="CHAT">CHAT</button><button data-mode="MANUEL">MANUEL</button>
+  </div>
+  <button id="lock">🔓 Libre</button>
+  <a class="linkbtn" href="/reglages">⚙ Réglages</a>
+</header>
+
+<main>
+  <section class="card wide">
+    <h2>À l'antenne</h2>
+    <div class="onair"><span class="dot"></span><span class="lbl" id="curLabel">—</span><span class="badge" id="curSrc"></span><span class="muted" id="curHold"></span></div>
+    <div class="reason" id="curReason"></div>
+    <div class="sugg" id="sugg" hidden><span>💡</span><span class="t"><b id="suggLabel"></b><br><span class="muted" id="suggReason"></span></span><button class="primary" id="suggBtn">Prendre</button></div>
+  </section>
+
+  <section class="card wide">
+    <h2>POV joueurs</h2>
+    <div class="composer" id="composer"></div>
+    <div class="grid" id="grid"></div>
+    <p class="muted" id="hint">Tap sur un joueur = plein écran. Choisis SPLIT / PIP / QUAD puis tape les joueurs dans l'ordre.</p>
+  </section>
+
+  <section class="card">
+    <h2>PC Stream : casters &amp; pièce</h2>
+    <div class="caster">
+      <div>
+        <div class="thumb" id="camThumb"></div>
+        <div class="muted" style="margin:4px 0 8px">Cam casters</div>
+        <div class="thumb" id="roomThumb" hidden></div>
+        <div class="muted" id="roomLbl" hidden style="margin-top:4px">Cam pièce</div>
+      </div>
+      <div style="flex:1;min-width:180px">
+        <div class="flex" style="margin-bottom:8px"><span class="chip" id="presence">Présence ?</span><span class="chip" id="talk">Micro</span><span class="muted" id="casterApplied"></span></div>
+        <div class="seg" id="casterModes">
+          <button data-c="AUTO">AUTO</button><button data-c="OFF">OFF</button><button data-c="PIP">PIP</button><button data-c="SPLIT">SPLIT</button><button data-c="FULL">FULL</button>
+        </div>
+        <div style="margin-top:10px"><button id="calib">📷 Calibrer siège vide</button></div>
+        <p class="muted">Calibre quand personne n'est devant la caméra : la présence est détectée par différence d'image.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="chatCard">
+    <h2>Chat Twitch</h2>
+    <div id="voteBox" class="vote muted">Le vote démarre en mode CHAT (« !pov 3 » ou « !pov pseudo »).</div>
+    <div id="spotBox" style="margin-top:10px"></div>
+    <div id="rewardsBox" class="muted" style="margin-top:10px"></div>
+  </section>
+
+  <section class="card">
+    <h2>Équité du temps d'écran</h2>
+    <div class="row"><span>Action pure</span><span id="fairVal"></span><span>Équité stricte</span></div>
+    <input type="range" min="0" max="1" step="0.05" id="fair">
+    <p class="muted" id="target"></p>
+    <div class="flex"><button id="boardBtn">📊 Classement à l'écran</button><button class="danger" id="resetBtn">Remettre à zéro</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Journal</h2>
+    <div class="flex" style="margin-bottom:8px">
+      <span class="muted">Répétition :</span>
+      <select id="tPlayer"></select>
+      <select id="tKind"><option value="death">Mort</option><option value="boss_start">Pull boss</option><option value="kill">Kill</option><option value="dmg_in">Dégâts subis</option></select>
+      <button id="tBtn">Simuler</button>
+    </div>
+    <div class="log" id="log"></div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const TYPES = [['FULL', 'Plein', 1], ['SPLIT', 'Split', 2], ['PIP', 'PIP', 2], ['QUAD', 'Quad', 4], ['MOSAIC', 'Mosaïque', 0], ['ROOM', 'Pièce', 0]];
+let ws, S = null, names = [], hasRoom = false, compose = { type: 'FULL', picks: [] };
+const thumbs = {};
+const fmt = s => { s = Math.round(Math.abs(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+const send = o => ws && ws.readyState === 1 && ws.send(JSON.stringify(o));
+
+function connect() {
+  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws?role=panel`);
+  ws.onmessage = e => {
+    const m = JSON.parse(e.data);
+    if (m.type === 'config') { names = m.players; hasRoom = m.hasRoom; buildStatic(); }
+    if (m.type === 'state') { S = m.state; render(); }
+    if (m.type === 'thumbs') { Object.assign(thumbs, m.thumbs); paintThumbs(); }
+    if (m.type === 'casterThumb') $('#camThumb').style.backgroundImage = `url(${m.uri})`;
+    if (m.type === 'roomThumb') { $('#roomThumb').hidden = $('#roomLbl').hidden = false; $('#roomThumb').style.backgroundImage = `url(${m.uri})`; }
+  };
+  ws.onclose = () => setTimeout(connect, 1500);
+}
+
+function buildStatic() {
+  $('#composer').innerHTML = TYPES.filter(t => t[0] !== 'ROOM' || hasRoom)
+    .map(([t, l]) => `<button data-t="${t}">${l}</button>`).join('') + '<span class="slots" id="slots"></span>';
+  $('#composer').onclick = e => {
+    const t = e.target.dataset.t; if (!t) return;
+    const n = TYPES.find(x => x[0] === t)[2];
+    if (n === 0) { send({ cmd: 'take', layout: { type: t, players: [] } }); compose = { type: 'FULL', picks: [] }; }
+    else compose = { type: t, picks: [] };
+    renderComposer();
+  };
+  $('#grid').innerHTML = names.map((n, i) => `
+    <div class="tile" data-i="${i}">
+      <div class="thumb" id="th${i}"><span class="num">${i + 1}</span><span class="tags" id="tg${i}"></span></div>
+      <div class="meta">
+        <div class="name"><span>${n}</span><span id="ev${i}" class="muted"></span></div>
+        <div class="bar"><i id="ib${i}" style="width:0"></i></div>
+        <div class="row"><span id="st${i}"></span><span class="debt" id="db${i}"></span></div>
+        <button class="privbtn" data-priv="${i}">Mettre en privé</button>
+      </div>
+    </div>`).join('');
+  $('#grid').onclick = e => {
+    const pv = e.target.dataset.priv;
+    if (pv !== undefined) { send({ cmd: 'private', i: +pv, value: !S.players[pv].private }); return; }
+    const tile = e.target.closest('.tile'); if (!tile) return;
+    const i = +tile.dataset.i;
+    const need = TYPES.find(x => x[0] === compose.type)[2];
+    if (compose.picks.includes(i)) return;
+    compose.picks.push(i);
+    if (compose.picks.length >= need) {
+      send({ cmd: 'take', layout: { type: compose.type, players: compose.picks } });
+      compose = { type: 'FULL', picks: [] };
+    }
+    renderComposer();
+  };
+  $('#tPlayer').innerHTML = names.map((n, i) => `<option value="${i}">${i + 1}. ${n}</option>`).join('');
+  renderComposer();
+}
+
+function renderComposer() {
+  document.querySelectorAll('#composer [data-t]').forEach(b => b.classList.toggle('sel', b.dataset.t === compose.type));
+  const need = TYPES.find(x => x[0] === compose.type)[2];
+  $('#slots').textContent = need > 1 ? `${compose.picks.map(i => names[i]).join(' → ') || 'choisis'} (${compose.picks.length}/${need})` : '';
+  document.querySelectorAll('.tile').forEach(t => t.classList.toggle('picked', compose.picks.includes(+t.dataset.i)));
+}
+
+function paintThumbs() {
+  for (const [k, uri] of Object.entries(thumbs)) {
+    const el = k === 'room' ? null : $(`#th${k}`);
+    if (el) el.style.backgroundImage = `url(${uri})`;
+  }
+}
+
+const KIND = { death: '💀', boss_start: '🐉', boss_kill: '🏆', boss_wipe: '☠️', kill: '⚔️', dmg_in: '🩸', dmg_out: '🗡️', shout: '📢', interrupt: '✋', res: '✨', heal: '💚', cast: '✦' };
+
+function render() {
+  const st = S;
+  const chip = (k, l) => `<span class="chip ${st.status[k] ? 'on' : ''}">${l}</span>`;
+  $('#chips').innerHTML = chip('pc1', 'PC POV') + chip('pc2', 'PC Stream') + chip('twitch', 'Twitch') + chip('llm', 'IA');
+  document.querySelectorAll('#modes button').forEach(b => b.classList.toggle('sel', b.dataset.mode === st.mode));
+  $('#lock').textContent = st.locked ? '🔒 Verrouillé' : '🔓 Libre';
+  $('#lock').classList.toggle('sel', st.locked);
+
+  $('#curLabel').textContent = st.current.label;
+  $('#curSrc').textContent = { auto: 'auto', manual: 'manuel', chat: 'chat', spotlight: 'projecteur' }[st.current.source] || st.current.source;
+  const left = st.current.timedUntil > st.now ? ` · encore ${Math.ceil((st.current.timedUntil - st.now) / 1000)}s` : '';
+  $('#curHold').textContent = `${fmt(st.current.holdSec)}${left}`;
+  $('#curReason').textContent = st.current.reason;
+  const showSugg = st.suggestion && st.suggestion.label !== st.current.label && (st.mode === 'MANUEL' || st.locked);
+  $('#sugg').hidden = !showSugg;
+  if (showSugg) { $('#suggLabel').textContent = st.suggestion.label; $('#suggReason').textContent = st.suggestion.reason; }
+
+  for (const p of st.players) {
+    const tile = document.querySelector(`.tile[data-i="${p.i}"]`); if (!tile) continue;
+    tile.classList.toggle('shown', p.shown);
+    tile.classList.toggle('priv', p.private);
+    $(`#ib${p.i}`).style.width = `${Math.min(100, p.interest * 10)}%`;
+    $(`#st${p.i}`).textContent = `⏱ ${fmt(p.screenTime)}`;
+    const db = $(`#db${p.i}`);
+    db.textContent = Math.abs(p.debt) < 5 ? 'à jour' : `${p.debt > 0 ? 'retard' : 'avance'} ${fmt(p.debt)}`;
+    db.className = `debt ${p.debt > 30 ? 'pos' : p.debt < -30 ? 'neg' : ''}`;
+    $(`#ev${p.i}`).textContent = p.interest > 0.5 ? (KIND[p.lastKind] || '') : '';
+    $(`#tg${p.i}`).innerHTML = (p.shown ? '<span style="color:#ff3b4e">● LIVE</span>' : '') + (p.agent ? '' : '<span title="agent combat log non connecté">no log</span>')
+      + (p.afk ? '<span>AFK</span>' : '') + (p.speaking ? '<span>🎙</span>' : '');
+    tile.querySelector('.privbtn').textContent = p.private ? 'Rendre visible' : 'Mettre en privé';
+  }
+
+  const c = st.caster;
+  $('#presence').textContent = !c.presenceCalibrated ? 'Non calibré (micro seul)' : c.present ? `Présent${c.presenceDiff != null ? ' · ' + c.presenceDiff : ''}` : `Absent${c.presenceDiff != null ? ' · ' + c.presenceDiff : ''}`;
+  $('#presence').className = `chip ${c.present ? 'on' : ''}`;
+  $('#talk').textContent = c.talking ? '🎙 Parle' : 'Micro calme';
+  $('#talk').className = `chip ${c.talking ? 'on' : ''}`;
+  $('#casterApplied').textContent = `À l'image : ${c.applied}`;
+  document.querySelectorAll('#casterModes button').forEach(b => b.classList.toggle('sel', b.dataset.c === c.mode));
+
+  if (st.vote) {
+    const max = Math.max(1, ...st.vote.options.map(o => o.n));
+    const sec = Math.max(0, Math.ceil((st.vote.endsAt - st.now) / 1000));
+    $('#voteBox').innerHTML = `<div class="flex"><b>Vote #${st.vote.round}</b><span class="muted">${st.vote.total} votants · fin dans ${sec}s</span><button id="newVote">Relancer</button></div>`
+      + st.vote.options.map(o => `<div class="opt"><span>${typeof o.key === 'number' ? o.key + 1 + '. ' : ''}${o.label}${o.private ? ' (privé)' : ''}</span><div class="bar"><i style="width:${o.n / max * 100}%"></i></div><b>${o.n}</b></div>`).join('');
+    $('#newVote').onclick = () => send({ cmd: 'startVote' });
+  } else $('#voteBox').innerHTML = 'Le vote démarre en mode CHAT (« !pov 3 » ou « !pov pseudo »).';
+
+  $('#spotBox').innerHTML = st.spotQueue.length
+    ? `<div class="flex"><b>🔦 Projecteurs en attente :</b> ${st.spotQueue.map(s => `${s.label} <span class="muted">(${s.by})</span>`).join(', ')}
+       <button class="primary" id="spotRun">Lancer</button><button id="spotDrop">Ignorer</button></div>` : '';
+  if (st.spotQueue.length) { $('#spotRun').onclick = () => send({ cmd: 'spot', action: 'run' }); $('#spotDrop').onclick = () => send({ cmd: 'spot', action: 'drop' }); }
+  $('#rewardsBox').innerHTML = (st.unknownRewards || []).length
+    ? 'Récompenses non configurées (copie l\'ID dans config.twitch.rewards) :<br>' + st.unknownRewards.map(r => `<code>${r.id}</code> « ${r.lastText} »`).join('<br>') : '';
+
+  if (document.activeElement !== $('#fair')) $('#fair').value = st.fairness;
+  $('#fairVal').textContent = Math.round(st.fairness * 100) + '%';
+  $('#target').textContent = `Objectif actuel : ${fmt(st.target)} par joueur · ${(st.elapsedSec / 3600).toFixed(1)} h de live comptées`;
+  $('#log').textContent = st.log.join('\n');
+}
+
+$('#modes').onclick = e => e.target.dataset.mode && send({ cmd: 'mode', mode: e.target.dataset.mode });
+$('#lock').onclick = () => send({ cmd: 'lock', value: !S.locked });
+$('#suggBtn').onclick = () => send({ cmd: 'applySuggestion' });
+$('#casterModes').onclick = e => e.target.dataset.c && send({ cmd: 'caster', mode: e.target.dataset.c });
+$('#calib').onclick = () => confirm('Personne devant la caméra casters ?') && send({ cmd: 'calibrate' });
+$('#fair').oninput = e => send({ cmd: 'fairness', value: +e.target.value });
+$('#boardBtn').onclick = () => send({ cmd: 'board' });
+$('#resetBtn').onclick = () => confirm('Remettre tous les temps d\'écran à zéro ?') && send({ cmd: 'resetScreen' });
+$('#tBtn').onclick = () => send({ cmd: 'testEvent', i: +$('#tPlayer').value, kind: $('#tKind').value });
+connect();
+</script>
+</body>
+</html>

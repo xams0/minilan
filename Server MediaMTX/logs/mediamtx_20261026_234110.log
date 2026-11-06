@@ -1,0 +1,4 @@
+2026/10/26 23:41:10 INF MediaMTX v1.18.2, windows, amd64
+2026/10/26 23:41:10 INF configuration loaded from C:\Users\maxim\Desktop\Lanppart\Autre\SRT Audio Receiver from MTX\Server MediaMTX\logs\mediamtx-run.yml
+2026/10/26 23:41:10 INF [SRT] listener opened on :8890 (UDP)
+2026/10/26 23:41:10 INF [API] listener opened on :9997 (TCP/HTTP)

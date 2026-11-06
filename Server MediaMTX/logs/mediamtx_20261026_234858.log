@@ -1,0 +1,146 @@
+2026/10/26 23:48:59 INF MediaMTX v1.18.2, windows, amd64
+2026/10/26 23:48:59 INF configuration loaded from A:\z_Maxime\LAN\Lanppart 3\00_APP-WEB\Server MediaMTX\logs\mediamtx-run.yml
+2026/10/26 23:48:59 INF [SRT] listener opened on :8890 (UDP)
+2026/10/26 23:48:59 INF [API] listener opened on :9997 (TCP/HTTP)
+2026/10/26 23:54:35 INF [SRT] [conn 26.214.243.172:61288] opened
+2026/10/26 23:54:36 INF [path yaourt] stream is available and online, 2 tracks (H264, MPEG-4 Audio)
+2026/10/26 23:54:36 INF [SRT] [conn 26.214.243.172:61288] is publishing to path 'yaourt'
+2026/10/26 23:55:35 INF [SRT] [conn 26.149.186.83:56773] opened
+2026/10/26 23:55:35 INF [SRT] [conn 26.149.186.83:56773] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/26 23:55:44 INF [SRT] [conn 26.149.186.83:56773] closed: EOF
+2026/10/26 23:55:44 INF [SRT] [conn 26.149.186.83:50691] opened
+2026/10/26 23:55:44 INF [SRT] [conn 26.149.186.83:50691] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/26 23:56:43 INF [SRT] [conn 26.149.186.83:50691] closed: EOF
+2026/10/26 23:56:44 INF [SRT] [conn 26.149.186.83:52220] opened
+2026/10/26 23:56:44 INF [SRT] [conn 26.149.186.83:52220] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/26 23:56:57 INF [SRT] [conn 26.149.186.83:52220] closed: EOF
+2026/10/26 23:56:57 INF [SRT] [conn 26.149.186.83:54152] opened
+2026/10/26 23:56:57 INF [SRT] [conn 26.149.186.83:54152] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/26 23:57:03 INF [SRT] [conn 26.149.186.83:54152] closed: EOF
+2026/10/26 23:57:04 INF [SRT] [conn 26.149.186.83:56031] opened
+2026/10/26 23:57:04 INF [SRT] [conn 26.149.186.83:56031] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/26 23:57:17 INF [SRT] [conn 26.149.186.83:56031] closed: EOF
+2026/10/26 23:57:17 INF [SRT] [conn 26.149.186.83:62430] opened
+2026/10/26 23:57:17 INF [SRT] [conn 26.149.186.83:62430] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/26 23:57:20 INF [SRT] [conn 26.149.186.83:62430] closed: EOF
+2026/10/26 23:57:21 INF [SRT] [conn 26.149.186.83:63088] opened
+2026/10/26 23:57:21 INF [SRT] [conn 26.149.186.83:63088] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/26 23:57:27 INF [SRT] [conn 26.149.186.83:63088] closed: EOF
+2026/10/26 23:57:27 INF [SRT] [conn 26.149.186.83:56850] opened
+2026/10/26 23:57:27 INF [SRT] [conn 26.149.186.83:56850] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/26 23:57:36 INF [SRT] [conn 26.149.186.83:56850] closed: EOF
+2026/10/26 23:57:36 INF [SRT] [conn 26.149.186.83:51750] opened
+2026/10/26 23:57:36 INF [SRT] [conn 26.149.186.83:51750] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/26 23:57:56 INF [SRT] [conn 26.149.186.83:51750] closed: too many reordered frames (11)
+2026/10/26 23:57:57 INF [SRT] [conn 26.149.186.83:59673] opened
+2026/10/26 23:57:57 INF [SRT] [conn 26.149.186.83:59673] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/26 23:58:18 INF [SRT] [conn 26.149.186.83:52475] opened
+2026/10/26 23:58:18 INF [SRT] [conn 26.149.186.83:52475] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/26 23:58:18 INF [SRT] [conn 26.149.186.83:59673] closed: EOF
+2026/10/26 23:58:50 INF [SRT] [conn 26.149.186.83:52475] closed: too many reordered frames (14)
+2026/10/26 23:58:51 INF [SRT] [conn 26.149.186.83:62963] opened
+2026/10/26 23:58:51 INF [SRT] [conn 26.149.186.83:62963] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/26 23:58:58 INF [SRT] [conn 26.149.186.83:62963] closed: too many reordered frames (15)
+2026/10/26 23:58:59 INF [SRT] [conn 26.149.186.83:52182] opened
+2026/10/26 23:58:59 INF [SRT] [conn 26.149.186.83:52182] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/27 00:00:02 INF [SRT] [conn 26.149.186.83:52182] closed: EOF
+2026/10/27 00:00:03 INF [SRT] [conn 26.149.186.83:58528] opened
+2026/10/27 00:00:03 INF [SRT] [conn 26.149.186.83:58528] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/27 00:01:34 INF [SRT] [conn 26.149.186.83:58528] closed: too many reordered frames (15)
+2026/10/27 00:01:35 INF [SRT] [conn 26.149.186.83:51738] opened
+2026/10/27 00:01:35 INF [SRT] [conn 26.149.186.83:51738] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/27 00:01:54 INF [SRT] [conn 26.149.186.83:51738] closed: too many reordered frames (14)
+2026/10/27 00:01:55 INF [SRT] [conn 26.149.186.83:52410] opened
+2026/10/27 00:01:55 INF [SRT] [conn 26.149.186.83:52410] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/27 00:02:06 INF [SRT] [conn 26.214.243.172:61288] closed: EOF
+2026/10/27 00:02:06 INF [SRT] [conn 26.149.186.83:52410] closed: terminated
+2026/10/27 00:02:07 INF [SRT] [conn 26.149.186.83:56575] opened
+2026/10/27 00:02:07 INF [SRT] [conn 26.149.186.83:56575] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:08 INF [SRT] [conn 26.149.186.83:56576] opened
+2026/10/27 00:02:08 INF [SRT] [conn 26.149.186.83:56576] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:09 INF [SRT] [conn 26.149.186.83:56580] opened
+2026/10/27 00:02:09 INF [SRT] [conn 26.149.186.83:56580] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:10 INF [SRT] [conn 26.149.186.83:56581] opened
+2026/10/27 00:02:10 INF [SRT] [conn 26.149.186.83:56581] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:11 INF [SRT] [conn 26.149.186.83:58298] opened
+2026/10/27 00:02:11 INF [SRT] [conn 26.149.186.83:58298] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:12 INF [SRT] [conn 26.149.186.83:58299] opened
+2026/10/27 00:02:12 INF [SRT] [conn 26.149.186.83:58299] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:13 INF [SRT] [conn 26.149.186.83:58300] opened
+2026/10/27 00:02:13 INF [SRT] [conn 26.149.186.83:58300] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:14 INF [SRT] [conn 26.149.186.83:58301] opened
+2026/10/27 00:02:14 INF [SRT] [conn 26.149.186.83:58301] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:15 INF [SRT] [conn 26.149.186.83:59108] opened
+2026/10/27 00:02:15 INF [SRT] [conn 26.149.186.83:59108] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:17 INF [SRT] [conn 26.149.186.83:59109] opened
+2026/10/27 00:02:17 INF [SRT] [conn 26.149.186.83:59109] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:18 INF [SRT] [conn 26.149.186.83:59110] opened
+2026/10/27 00:02:18 INF [SRT] [conn 26.149.186.83:59110] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:19 INF [SRT] [conn 26.149.186.83:59114] opened
+2026/10/27 00:02:19 INF [SRT] [conn 26.149.186.83:59114] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:20 INF [SRT] [conn 26.149.186.83:51802] opened
+2026/10/27 00:02:20 INF [SRT] [conn 26.149.186.83:51802] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:21 INF [SRT] [conn 26.149.186.83:51803] opened
+2026/10/27 00:02:21 INF [SRT] [conn 26.149.186.83:51803] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:22 INF [SRT] [conn 26.149.186.83:51804] opened
+2026/10/27 00:02:22 INF [SRT] [conn 26.149.186.83:51804] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:23 INF [SRT] [conn 26.149.186.83:51805] opened
+2026/10/27 00:02:23 INF [SRT] [conn 26.149.186.83:51805] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:23 INF [SRT] [conn 192.168.1.18:49270] opened
+2026/10/27 00:02:24 INF [SRT] [conn 26.149.186.83:49835] opened
+2026/10/27 00:02:24 INF [SRT] [conn 26.149.186.83:49835] closed: no stream is available on path 'yaourt'
+2026/10/27 00:02:24 INF [path yaourt] stream is available and online, 2 tracks (H264, MPEG-4 Audio)
+2026/10/27 00:02:24 INF [SRT] [conn 192.168.1.18:49270] is publishing to path 'yaourt'
+2026/10/27 00:02:25 INF [SRT] [conn 26.149.186.83:49836] opened
+2026/10/27 00:02:25 INF [SRT] [conn 26.149.186.83:49836] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/27 00:02:34 INF [SRT] [conn 26.149.186.83:49836] closed: EOF
+2026/10/27 00:02:34 INF [SRT] [conn 127.0.0.1:62660] opened
+2026/10/27 00:02:34 INF [SRT] [conn 127.0.0.1:62660] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/27 00:09:46 INF [SRT] [conn 192.168.1.18:49270] closed: EOF
+2026/10/27 00:09:46 INF [SRT] [conn 127.0.0.1:62660] closed: terminated
+2026/10/27 00:09:47 INF [SRT] [conn 127.0.0.1:60633] opened
+2026/10/27 00:09:47 INF [SRT] [conn 127.0.0.1:60633] closed: no stream is available on path 'yaourt'
+2026/10/27 00:09:48 INF [SRT] [conn 127.0.0.1:60634] opened
+2026/10/27 00:09:48 INF [SRT] [conn 127.0.0.1:60634] closed: no stream is available on path 'yaourt'
+2026/10/27 00:09:48 INF [SRT] [conn 192.168.1.18:58155] opened
+2026/10/27 00:09:49 INF [path yaourt] stream is available and online, 2 tracks (H264, MPEG-4 Audio)
+2026/10/27 00:09:49 INF [SRT] [conn 192.168.1.18:58155] is publishing to path 'yaourt'
+2026/10/27 00:09:49 INF [SRT] [conn 127.0.0.1:62066] opened
+2026/10/27 00:09:49 INF [SRT] [conn 127.0.0.1:62066] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/27 00:14:39 INF [SRT] [conn 192.168.1.18:58155] closed: EOF
+2026/10/27 00:14:39 INF [SRT] [conn 127.0.0.1:62066] closed: terminated
+2026/10/27 00:14:40 INF [SRT] [conn 127.0.0.1:55754] opened
+2026/10/27 00:14:40 INF [SRT] [conn 127.0.0.1:55754] closed: no stream is available on path 'yaourt'
+2026/10/27 00:14:41 INF [SRT] [conn 127.0.0.1:49523] opened
+2026/10/27 00:14:41 INF [SRT] [conn 127.0.0.1:49523] closed: no stream is available on path 'yaourt'
+2026/10/27 00:14:41 INF [SRT] [conn 192.168.1.18:63805] opened
+2026/10/27 00:14:42 INF [path yaourt] stream is available and online, 2 tracks (H264, MPEG-4 Audio)
+2026/10/27 00:14:42 INF [SRT] [conn 192.168.1.18:63805] is publishing to path 'yaourt'
+2026/10/27 00:14:42 INF [SRT] [conn 127.0.0.1:57570] opened
+2026/10/27 00:14:42 INF [SRT] [conn 127.0.0.1:57570] is reading from path 'yaourt', 2 tracks (H264, MPEG-4 Audio)
+2026/10/27 00:24:18 INF [SRT] [conn 192.168.1.18:63805] closed: EOF
+2026/10/27 00:24:18 INF [SRT] [conn 127.0.0.1:57570] closed: terminated
+2026/10/27 00:24:19 INF [SRT] [conn 127.0.0.1:51130] opened
+2026/10/27 00:24:19 INF [SRT] [conn 127.0.0.1:51130] closed: no stream is available on path 'yaourt'
+2026/10/27 00:24:20 INF [SRT] [conn 127.0.0.1:51131] opened
+2026/10/27 00:24:20 INF [SRT] [conn 127.0.0.1:51131] closed: no stream is available on path 'yaourt'
+2026/10/27 00:24:21 INF [SRT] [conn 127.0.0.1:51132] opened
+2026/10/27 00:24:21 INF [SRT] [conn 127.0.0.1:51132] closed: no stream is available on path 'yaourt'
+2026/10/27 00:24:22 INF [SRT] [conn 127.0.0.1:51133] opened
+2026/10/27 00:24:22 INF [SRT] [conn 127.0.0.1:51133] closed: no stream is available on path 'yaourt'
+2026/10/27 00:24:23 INF [SRT] [conn 127.0.0.1:51134] opened
+2026/10/27 00:24:23 INF [SRT] [conn 127.0.0.1:51134] closed: no stream is available on path 'yaourt'
+2026/10/27 00:24:25 INF [SRT] [conn 127.0.0.1:57567] opened
+2026/10/27 00:24:25 INF [SRT] [conn 127.0.0.1:57567] closed: no stream is available on path 'yaourt'
+2026/10/27 00:24:26 INF [SRT] [conn 127.0.0.1:57568] opened
+2026/10/27 00:24:26 INF [SRT] [conn 127.0.0.1:57568] closed: no stream is available on path 'yaourt'
+2026/10/27 00:24:27 INF [SRT] [conn 127.0.0.1:57569] opened
+2026/10/27 00:24:27 INF [SRT] [conn 127.0.0.1:57569] closed: no stream is available on path 'yaourt'
+2026/10/27 00:24:28 INF [SRT] [conn 127.0.0.1:57570] opened
+2026/10/27 00:24:28 INF [SRT] [conn 127.0.0.1:57570] closed: no stream is available on path 'yaourt'
+2026/10/27 00:24:29 INF [SRT] [conn 127.0.0.1:59732] opened
+2026/10/27 00:24:29 INF [SRT] [conn 127.0.0.1:59732] closed: no stream is available on path 'yaourt'
+2026/10/27 00:24:30 INF [SRT] [conn 127.0.0.1:65314] opened
+2026/10/27 00:24:30 INF [SRT] [conn 127.0.0.1:65314] closed: no stream is available on path 'yaourt'
+2026/10/27 00:24:31 INF [SRT] [conn 127.0.0.1:64908] opened
+2026/10/27 00:24:31 INF [SRT] [conn 127.0.0.1:64908] closed: no stream is available on path 'yaourt'

@@ -1,0 +1,43 @@
+{
+  "savedAt": 1793938740261,
+  "startedAt": 1793926773312,
+  "distributed": 507.20399999999654,
+  "players": [
+    {
+      "name": "xams",
+      "screenTime": 97.81450000000008
+    },
+    {
+      "name": "yaourt",
+      "screenTime": 71.81200000000005
+    },
+    {
+      "name": "shyne",
+      "screenTime": 73.80300000000005
+    },
+    {
+      "name": "keamy",
+      "screenTime": 72.80900000000005
+    },
+    {
+      "name": "tioneb",
+      "screenTime": 37.79299999999999
+    },
+    {
+      "name": "erimghul",
+      "screenTime": 37.79249999999999
+    },
+    {
+      "name": "darky",
+      "screenTime": 47.79799999999994
+    },
+    {
+      "name": "fuego",
+      "screenTime": 33.79099999999993
+    },
+    {
+      "name": "billy",
+      "screenTime": 33.79099999999993
+    }
+  ]
+}

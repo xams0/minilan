@@ -1,0 +1,45 @@
+================================================================================
+  MEDIAMTX - CONFIGURATION OBS LAN ESPORT
+  IP actuelle : 127.0.0.1 (local) → remplacer par l'IP réelle du serveur
+================================================================================
+
+DANS OBS : Paramètres → Flux → Service : Personnalisé
+  - Coller l'URL dans le champ "Serveur"
+  - Laisser "Clé de stream" VIDE
+  - Encodeur recommandé : x264 ou NVENC, CBR, 4000-6000 kbps
+
+────────────────────────────────────────────────────────────────────────────────
+ POSTE        URL OBS (champ Serveur)
+────────────────────────────────────────────────────────────────────────────────
+ Joueur  1    srt://127.0.0.1:8890?streamid=publish:joueur1
+ Joueur  2    srt://127.0.0.1:8890?streamid=publish:joueur2
+ Joueur  3    srt://127.0.0.1:8890?streamid=publish:joueur3
+ Joueur  4    srt://127.0.0.1:8890?streamid=publish:joueur4
+ Joueur  5    srt://127.0.0.1:8890?streamid=publish:joueur5
+ Joueur  6    srt://127.0.0.1:8890?streamid=publish:joueur6
+ Joueur  7    srt://127.0.0.1:8890?streamid=publish:joueur7
+ Joueur  8    srt://127.0.0.1:8890?streamid=publish:joueur8
+ Joueur  9    srt://127.0.0.1:8890?streamid=publish:joueur9
+ Joueur 10    srt://127.0.0.1:8890?streamid=publish:joueur10
+ Joueur 11    srt://127.0.0.1:8890?streamid=publish:joueur11
+ Joueur 12    srt://127.0.0.1:8890?streamid=publish:joueur12
+ Joueur 13    srt://127.0.0.1:8890?streamid=publish:joueur13
+ Joueur 14    srt://127.0.0.1:8890?streamid=publish:joueur14
+ Joueur 15    srt://127.0.0.1:8890?streamid=publish:joueur15
+ Joueur 16    srt://127.0.0.1:8890?streamid=publish:joueur16
+────────────────────────────────────────────────────────────────────────────────
+
+RÉGIE (OBS - lire un flux) :
+  srt://127.0.0.1:8890?streamid=read:joueur1   ← remplacer le numéro
+  Source OBS : Média → décocher "Fichier local" → coller l'URL
+
+MONITORING (état des flux en direct) :
+  http://127.0.0.1:9997/v3/paths/list
+
+LANCER MEDIAMTX :
+  .\mediamtx.exe mediamtx.yml
+
+================================================================================
+  ! Remplacer 127.0.0.1 par l'IP LAN du serveur avant distribution !
+  (PowerShell : ipconfig → chercher "Adresse IPv4")
+================================================================================
