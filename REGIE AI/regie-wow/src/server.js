@@ -63,7 +63,10 @@ const pc2 = new Pc2(config, director, {
   onRoomThumb: uri => { lastRoomThumb = uri; broadcast(['panel', 'streamdeck'], { type: 'roomThumb', uri }); }
 });
 director.output.applyLayout = layout => { pc2.setLayout(layout); return pc1.applyLayout(layout); };
-director.output.applyCaster = mode => pc2.applyCaster(mode);
+director.output.applyCaster = mode => { const done = pc2.applyCaster(mode); pc1.casterPipChanged(); return done; };
+// Le PIP joueur (PC POV) et le PIP casters (PC Stream) ne doivent jamais se recouvrir
+pc1.casterPip = () => pc2.casterPipOnAir();
+pc2.onPipChanged = () => pc1.casterPipChanged();
 if (!noObs) { pc1.start(); pc2.start(); } else director.addLog('Mode sans OBS (--no-obs)');
 
 const twitch = new TwitchChat(config, director);
@@ -110,6 +113,7 @@ function handleCommand(client, m) {
     case 'fairness': d.setFairness(m.value); break;
     case 'private': d.setPrivate(m.i, m.value); break;
     case 'caster': d.setCasterMode(m.mode); break;
+    case 'casterPip': pc2.setPipPreset(m.preset).catch(e => d.addLog(`PC Stream : ${e.message}`)).then(() => d.emitState()); break;
     case 'calibrate': pc2.calibrate(); d.emitState(); break;
     case 'applySuggestion': d.applySuggestion(); break;
     case 'board': d.showBoard(); break;
@@ -152,6 +156,7 @@ const server = http.createServer((req, res) => {
   // Commandes simples en GET, pour un Stream Deck (action "Site web" / "API Ninja") :
   //   /api/cmd?cmd=mode&mode=CHAT   /api/cmd?cmd=caster&mode=FULL   /api/cmd?cmd=take&type=FULL&players=3
   //   /api/cmd?cmd=lock&value=1     /api/cmd?cmd=board
+  //   /api/cmd?cmd=casterPip&preset=1 (1 à 3 ; sans preset : position des réglages)
   if (url.pathname === '/api/cmd') {
     const q = Object.fromEntries(url.searchParams);
     const m = { ...q };
@@ -159,6 +164,7 @@ const server = http.createServer((req, res) => {
     if (q.mode) m.mode = q.mode.toUpperCase();
     if ('value' in q) m.value = q.value === '1' || q.value === 'true';
     if (q.i) m.i = Number(q.i) - 1;
+    if (q.preset) m.preset = Number(q.preset) - 1;
     handleCommand({ role: 'panel' }, m);
     res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify({ ok: true, mode: director.mode, plan: director.getState().current.label }));
     return;

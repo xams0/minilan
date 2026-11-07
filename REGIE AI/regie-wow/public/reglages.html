@@ -252,13 +252,47 @@ function layoutsBlock() {
   const names = { OFF: 'Sans casters', PIP: 'Casters en PIP', SPLIT: 'Casters en split', FULL: 'Casters en plein écran' };
   const rect = (path, title) => el('div', { class: 'group' }, el('span', { text: title }), el('div', { class: 'rect' },
     ...['X', 'Y', 'Largeur', 'Hauteur'].map((lbl, i) => el('label', {}, lbl, makeInput({ p: `${path}.${i}`, t: 'num' })))));
-  const wrap = el('div', {}, el('h3', { text: 'Disposition, en pixels' }), el('p', { class: 'intro', text: 'Si tu déplaces le PIP des casters dans OBS, la régie retient cette position. Modifier ici « Casters en PIP : caméra » la remplace.' }));
+  const wrap = el('div', {}, el('h3', { text: 'Disposition, en pixels' }), el('p', { class: 'intro', text: 'La régie replace ces éléments elle-même : un déplacement à la souris dans OBS est annulé au changement suivant.' }));
   const grid = el('div', { class: 'layouts' });
   for (const [m, name] of Object.entries(names)) {
     grid.append(rect(`pc2.layouts.${m}.game`, `${name} : jeu`));
     if (m !== 'OFF') grid.append(rect(`pc2.layouts.${m}.cam`, `${name} : caméra`));
   }
   wrap.append(grid);
+
+  // Presets du PIP casters : les trois touches de fin de dernière ligne du Stream Deck
+  const presets = el('div', { class: 'layouts' });
+  cfg.pc2.pipPresets.forEach((_, n) => {
+    const at = `pc2.pipPresets.${n}`;
+    const out = el('small', { role: 'status' });
+    const grab = el('button', { type: 'button', class: 'small', text: 'Reprendre la position d\'OBS' });
+    grab.onclick = async () => {
+      grab.disabled = true;
+      out.className = '';
+      out.textContent = 'Lecture…';
+      try {
+        const r = await post('/api/obs-item-rect', { url: cfg.pc2.url, password: cfg.pc2.password, scene: cfg.pc2.scene, source: cfg.pc2.casterCam });
+        if (!r.ok) throw new Error(r.error);
+        r.rect.forEach((v, i) => {
+          setPath(cfg, `${at}.rect.${i}`, v);
+          document.getElementById(`f-${at}.rect.${i}`).value = v;
+        });
+        markDirty();
+        out.textContent = 'Repris. Enregistre pour le garder.';
+      } catch (e) { out.className = 'msg err'; out.textContent = e.message; }
+      grab.disabled = false;
+    };
+    presets.append(el('div', { class: 'group' },
+      el('span', { text: `Preset ${n + 1} : nom sur la touche` }),
+      makeInput({ p: `${at}.name`, t: 'text', a: `Nom du preset ${n + 1}` }),
+      el('div', { class: 'rect' }, ...['X', 'Y', 'Largeur', 'Hauteur'].map((lbl, i) => el('label', {}, lbl, makeInput({ p: `${at}.rect.${i}`, t: 'num' })))),
+      grab, out));
+  });
+  wrap.append(
+    el('h3', { text: 'Presets du PIP casters' }),
+    el('p', { class: 'intro', text: 'Choisis-les avec les trois dernières touches du Stream Deck ; un second appui revient à « Casters en PIP : caméra ». Pour régler à la souris : place la caméra dans OBS, clique sur « Reprendre la position d\'OBS », enregistre, puis redémarre la régie.' }),
+    presets
+  );
   return wrap;
 }
 

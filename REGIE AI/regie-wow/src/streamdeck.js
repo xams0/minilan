@@ -5,7 +5,7 @@
 //   SPLIT   PIP     QUAD    MOSAÏQ  PIÈCE   POV 1   POV 2   POV 3
 //   CAST.AU CAST.OF CAST.PI CAST.SP CAST.FU POV 4   POV 5   POV 6
 //   PRIVÉ   PROJ.   IGNORER CASTERS VOTE?   POV 7   POV 8   POV 9
-//   PC POV  PC STR. TWITCH  IA      AGENTS
+//   PC POV  PC STR. TWITCH  IA      AGENTS  PRESET 1 PRESET 2 PRESET 3 (PIP casters)
 export const COLS = 8, ROWS = 5;
 
 const INK = '#e8ecf5', DIM = '#8c98b8', OFF_INK = '#545f80', VOID = '#05070d', RAISED = '#0f1729', PANEL = '#0b111e', LINE = '#2c3c60';
@@ -119,6 +119,12 @@ export class StreamDeckSurface {
       put(col, 4, info(key(label, { small: true, dot: s.status[id] ? WIN : LIVE }))));
     const agents = s.players.filter(p => p.agent).length;
     put(4, 4, info(key('AGENTS', { small: true, sub: `${agents}/${s.players.length}`, dot: agents === s.players.length ? WIN : agents ? WARN : LIVE })));
+
+    // Fin de ligne 5 : presets du PIP casters, nommés sur /reglages ; un second appui revient à la position des réglages
+    this.config.pc2.pipPresets.forEach((preset, i) => {
+      const on = s.caster.pipPreset === i;
+      put(5 + i, 4, toggle(key('PIP CASTERS', { small: true, sub: preset.name, run: () => this.send({ cmd: 'casterPip', preset: on ? null : i }) }), on));
+    });
     return keys;
   }
 

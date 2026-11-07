@@ -22,7 +22,7 @@ Simulation sur 10 h (`npm run simu`) : avec une équité à 60 %, l'écart entre
 ```
 
 - **PC POV** : uniquement les 8 POV reçues en SRT. La régie compose le plan dans deux scènes, `REGIE_A` et `REGIE_B` (plein écran, split, PIP, quad, mosaïque). Elle prépare la scène cachée, puis bascule dessus, ce qui déclenche ta transition OBS (fondu ou stinger). La sortie HDMI est un **projecteur plein écran (Programme)**.
-- **PC Stream** : la régie ne touche qu'à **trois éléments** de ta scène `LIVE`, avec une petite animation : la capture HDMI, la cam casters et la cam pièce. Tes overlays, tes micros et le reste ne sont pas modifiés.
+- **PC Stream** : la régie ne touche qu'à **trois éléments** de ta scène `LIVE`, avec une petite animation : la capture HDMI, la cam casters (avec son filtre de fondu `REGIE_FONDU`) et la cam pièce. Tes overlays, tes micros et le reste ne sont pas modifiés.
   - **Plan « Pièce »** : la cam pièce prend la place du jeu. Le PC POV garde son plan en dessous, rien n'y bouge.
   - **Mosaïque** : le PC POV affiche les 8 POV en 3×3 avec la case centrale vide, et le PC Stream y pose la cam pièce. Le décalage `pc2.syncDelayMs` (350 ms par défaut) attend que la transition du PC POV soit passée par le HDMI. Ajuste-le si la cam arrive trop tôt ou trop tard.
 
@@ -101,6 +101,7 @@ Le plugin ne contient ni touche, ni lien, ni commande. `src/streamdeck.js`, dans
 - **POV 1 à 9, à droite :** appui = plein écran, avec l'image du POV dans la touche.
 - **PIP, Split, Quad :** appuie sur le plan, puis sur les joueurs. Pour un PIP, le premier joueur est le plan principal. Un second appui sur le plan annule.
 - **Caméras :** Pièce (la caméra de `pc2.roomCam`), et la ligne Casters pour la caméra des casters (Auto, Off, PIP, Split, Plein écran).
+- **PIP Casters (fin de la dernière ligne) :** les trois presets de `/reglages`, avec leur nom. Un second appui revient à « Casters en PIP : caméra ». Hors PIP, le choix attend le prochain passage en PIP.
 - **Autres :** modes, verrou, suggestion, classement, vote, privé, projecteurs, état des connexions et des agents.
 
 ### Page tactile (tablette, Steam Deck)
@@ -127,6 +128,7 @@ Avec l'action « Site web » (en arrière-plan) ou le plugin API Ninja, appelle 
 | Split 2 et 5 | `http://IP:8080/api/cmd?cmd=take&type=SPLIT&players=2,5` |
 | Mosaïque / Pièce | `http://IP:8080/api/cmd?cmd=take&type=MOSAIC` / `type=ROOM` |
 | Casters | `http://IP:8080/api/cmd?cmd=caster&mode=FULL` (ou `AUTO`, `OFF`, `PIP`, `SPLIT`) |
+| Preset du PIP casters | `http://IP:8080/api/cmd?cmd=casterPip&preset=1` (1 à 3 ; sans `preset` : position des réglages) |
 | Verrou | `http://IP:8080/api/cmd?cmd=lock&value=1` (ou `0`) |
 | Classement à l'écran | `http://IP:8080/api/cmd?cmd=board` |
 
@@ -240,7 +242,10 @@ Il est aussi multiplié par la place laissée au jeu par les casters : 0,9 en PI
   - présent, parle depuis 15 s et jeu calme → PLEIN ÉCRAN, le jeu reste en vignette ;
   - action en jeu → retour en PIP.
 - Positions et tailles : `pc2.layouts` (en pixels sur 1920×1080).
-- Si tu déplaces ou redimensionnes le PIP directement dans OBS, la régie retient cette position, y compris après un redémarrage (`data/caster-pip.json`). Modifier « Casters en PIP : caméra » sur `/reglages` la remplace.
+- **Position du PIP :** trois presets (nom, position, taille) à modifier sur `/reglages`, à choisir avec les touches **PIP Casters** du Stream Deck. Le choix survit à un redémarrage (`data/caster-pip.json`). Sans preset, le PIP suit « Casters en PIP : caméra ».
+- **OBS ne décide plus :** un déplacement à la souris est annulé au changement suivant. Pour régler à la souris, place la caméra, clique sur **Reprendre la position d'OBS** dans le preset, enregistre et redémarre la régie.
+- **Fondu :** le PIP casters apparaît et se cache en fondu, sur la durée d'animation des réglages. La régie pose pour cela un filtre `REGIE_FONDU` (Correction colorimétrique) sur la caméra casters. Ne le supprime pas pendant qu'elle tourne : sans ce filtre, le PIP s'affiche d'un coup jusqu'à sa prochaine connexion à OBS.
+- **Pas de superposition :** si le PIP casters tombe sur le PIP joueur, celui-ci change de coin tout seul, puis revient au coin de `pc1.pipCorner` dès que la place est libre. En mosaïque, si le PIP casters touche la case centrale, il s'y cale et la cam pièce s'efface.
 - `muteMicsWhenAbsent: true` coupe les micros casters quand personne n'est là.
 
 ## Répéter avant le live

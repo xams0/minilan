@@ -109,6 +109,12 @@ export function validate(cfg, example) {
     if (l?.game?.length !== 4) err(`pc2.layouts.${mode}.game`, 'il faut X, Y, largeur et hauteur');
     if (mode !== 'OFF' && l?.cam?.length !== 4) err(`pc2.layouts.${mode}.cam`, 'il faut X, Y, largeur et hauteur');
   }
+  if (cfg.pc2.pipPresets.length !== 3) err('pc2.pipPresets', 'il faut exactement trois presets, un par touche du Stream Deck');
+  cfg.pc2.pipPresets.forEach((p, i) => {
+    if (!p.name.trim()) err(`pc2.pipPresets.${i}.name`, 'nom obligatoire');
+    if (p.rect.length !== 4) err(`pc2.pipPresets.${i}.rect`, 'il faut X, Y, largeur et hauteur');
+    for (const k of [2, 3]) if (!(p.rect[k] > 0)) err(`pc2.pipPresets.${i}.rect.${k}`, 'doit être supérieur à 0');
+  });
 
   if (cfg.players.length < 1 || cfg.players.length > MAX_PLAYERS) err('players', `il faut entre 1 et ${MAX_PLAYERS} joueurs`);
   const seen = new Set();
@@ -151,25 +157,15 @@ function writeConfig(file, cfg) {
   fs.renameSync(tmp, file);
 }
 
-/** Connexion courte à OBS, en lecture seule, pour vérifier l'adresse et lister scènes et sources */
-export async function testObs(url, password) {
+/** Connexion courte à OBS, en lecture seule */
+async function readObs(url, password, read) {
   if (typeof url !== 'string' || !/^wss?:\/\/\S+$/.test(url)) return { ok: false, error: 'Adresse invalide : elle doit ressembler à ws://192.168.1.10:4455' };
   const obs = new OBSWebSocket();
   let timer;
   try {
     const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('timeout')), 4000); });
     await Promise.race([obs.connect(url, password || undefined, { eventSubscriptions: 0 }), timeout]);
-    const [version, sceneList, inputList] = await Promise.race([
-      Promise.all([obs.call('GetVersion'), obs.call('GetSceneList'), obs.call('GetInputList')]),
-      timeout
-    ]);
-    return {
-      ok: true,
-      version: version.obsVersion,
-      program: sceneList.currentProgramSceneName,
-      scenes: sceneList.scenes.map(s => s.sceneName).reverse(),
-      inputs: inputList.inputs.map(i => i.inputName)
-    };
+    return { ok: true, ...await Promise.race([read(obs), timeout]) };
   } catch (e) {
     if (e.code === 4009) return { ok: false, error: password ? 'Mot de passe incorrect' : 'OBS demande un mot de passe' };
     if (e.message === 'timeout') return { ok: false, error: 'Pas de réponse d\'OBS au bout de 4 s : vérifie l\'adresse et le pare-feu' };
@@ -179,6 +175,30 @@ export async function testObs(url, password) {
     try { await obs.disconnect(); } catch { /* déjà fermé */ }
   }
 }
+
+/** Vérifie l'adresse et liste scènes et sources */
+export const testObs = (url, password) => readObs(url, password, async obs => {
+  const [version, sceneList, inputList] = await Promise.all([obs.call('GetVersion'), obs.call('GetSceneList'), obs.call('GetInputList')]);
+  return {
+    version: version.obsVersion,
+    program: sceneList.currentProgramSceneName,
+    scenes: sceneList.scenes.map(s => s.sceneName).reverse(),
+    inputs: inputList.inputs.map(i => i.inputName)
+  };
+});
+
+/** Position actuelle d'une source dans une scène, pour la reprendre dans un preset */
+export const readItemRect = (url, password, sceneName, sourceName) => readObs(url, password, async obs => {
+  let t;
+  try {
+    const { sceneItemId } = await obs.call('GetSceneItemId', { sceneName, sourceName });
+    ({ sceneItemTransform: t } = await obs.call('GetSceneItemTransform', { sceneName, sceneItemId }));
+  } catch {
+    return { ok: false, error: `« ${sourceName} » introuvable dans la scène « ${sceneName} »` };
+  }
+  const bounded = t.boundsType !== 'OBS_BOUNDS_NONE';
+  return { rect: [t.positionX, t.positionY, bounded ? t.boundsWidth : t.width, bounded ? t.boundsHeight : t.height].map(Math.round) };
+});
 
 /**
  * Renvoie un gestionnaire de routes.
@@ -212,6 +232,10 @@ export function createSettingsApi({ root, home = root, running, runtime, restart
     'POST /api/obs-test': async (req, res) => {
       const { url, password } = await readBody(req);
       json(res, 200, await testObs(url, password));
+    },
+    'POST /api/obs-item-rect': async (req, res) => {
+      const { url, password, scene, source } = await readBody(req);
+      json(res, 200, await readItemRect(url, password, scene, source));
     },
     'POST /api/restart': async (req, res) => {
       if (!restart) return json(res, 409, { ok: false, error: 'Redémarrage impossible depuis cette page : relance la régie avec npm start.' });

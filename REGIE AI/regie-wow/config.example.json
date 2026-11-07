@@ -79,6 +79,11 @@
       1080
     ],
     "tweenMs": 450,
+    "pipPresets": [
+      { "name": "BAS GAUCHE", "rect": [93, 710, 480, 270] },
+      { "name": "CENTRE", "rect": [720, 375, 480, 270] },
+      { "name": "BAS DROITE", "rect": [1346, 710, 480, 270] }
+    ],
     "layouts": {
       "OFF": {
         "game": [

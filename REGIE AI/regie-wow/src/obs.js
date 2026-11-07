@@ -8,9 +8,12 @@ import { OBSWebSocket, EventSubscription } from 'obs-websocket-js';
 import jpeg from 'jpeg-js';
 import fs from 'node:fs';
 import path from 'node:path';
-import { cells, MOSAIC_FULL_AT } from './layouts.js';
+import { cells, MOSAIC_FULL_AT, freePlayerPipCorner, rectsOverlap } from './layouts.js';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// Filtre posé par la régie sur la caméra casters : OBS n'expose pas l'opacité d'un élément de scène
+const FADE_FILTER = 'REGIE_FONDU';
 
 /** Décode une capture JPEG d'OBS en niveaux de gris (Float32Array 0..1) */
 export function grayFromDataUri(uri) {
@@ -42,8 +45,6 @@ const transform = ([x, y, w, h]) => ({
   boundsType: 'OBS_BOUNDS_SCALE_INNER', boundsWidth: Math.max(1, w), boundsHeight: Math.max(1, h), boundsAlignment: 0,
   cropLeft: 0, cropRight: 0, cropTop: 0, cropBottom: 0
 });
-
-const sameRect = (a, b, tolerance = 2) => !!a && !!b && a.length === 4 && b.length === 4 && a.every((v, i) => Math.abs(v - b[i]) <= tolerance);
 
 /** Connexion OBS avec reconnexion automatique */
 class ObsLink {
@@ -99,6 +100,8 @@ export class Pc1 {
     this.counts = {};
     this.program = null;
     this.prevGray = [];
+    this.casterPip = () => null; // PIP casters à l'antenne, branché sur le PC Stream dans server.js
+    this.playerPipCorner = null; // coin du dernier PIP joueur composé
     this.applying = Promise.resolve();
     this.link.obs.on('CurrentProgramSceneChanged', e => { this.program = e.sceneName; });
     if (this.hasMics) {
@@ -139,12 +142,27 @@ export class Pc1 {
     return this.applying;
   }
 
+  /** Coin du PIP joueur, en laissant la place au PIP casters s'il est à l'image */
+  freeCorner() {
+    const wanted = this.c.pipCorner || 'bottom-left';
+    const pip = this.casterPip();
+    return pip ? freePlayerPipCorner(wanted, pip.cam, pip.game) : wanted;
+  }
+
+  /** Le PIP casters a bougé : recompose le plan seulement si le PIP joueur doit changer de coin */
+  casterPipChanged() {
+    const layout = this.dir.current.layout;
+    if (layout?.type === 'PIP' && this.freeCorner() !== this.playerPipCorner) this.applyLayout(layout);
+  }
+
   async _apply(layout) {
     // La caméra pièce est sur le PC Stream : le PC POV garde son plan précédent en dessous
     if (layout.type === 'ROOM') return;
     const [A, B] = this.c.scenes;
     const scene = this.program === A ? B : A;
-    const list = cells(layout, { canvas: this.c.canvas, pipCorner: this.c.pipCorner, playerCount: this.cfg.players.length, hasRoom: false });
+    const pipCorner = this.freeCorner();
+    if (layout.type === 'PIP') this.playerPipCorner = pipCorner;
+    const list = cells(layout, { canvas: this.c.canvas, pipCorner, playerCount: this.cfg.players.length, hasRoom: false });
     this.onTags(scene === A ? 'A' : 'B', list.map(c => ({
       rect: c.rect, name: c.who === 'room' ? null : this.cfg.players[c.who].name, small: c.top || c.rect[2] < 700
     })), this.c.canvas);
@@ -206,20 +224,16 @@ export class Pc2 {
     this.onThumb = onThumb; this.onRoomThumb = onRoomThumb;
     this.refPath = path.join(dataDir, 'caster-ref.json');
     this.pipPath = path.join(dataDir, 'caster-pip.json');
-    this.pipRect = null;       // position du PIP choisie à la main dans OBS (sinon : celle des réglages)
-    this.camWritten = null;    // dernière position de la caméra écrite par la régie
-    this.renderedMode = null;  // mode casters du dernier affichage terminé
-    this.pipSaved = false;     // caster-pip.json correspond à la config actuelle
+    this.pipPreset = null;     // preset du PIP choisi (indice dans pc2.pipPresets) ; null : « Casters en PIP : caméra »
+    this.onPipChanged = () => {};
+    this.fadeReady = false;    // le filtre de fondu existe dans OBS
+    this.camOpacity = 1;       // dernière opacité écrite ; revient à 1 une fois la caméra cachée
+    this.camMode = null;       // mode casters qui affiche la caméra, null quand elle est cachée
     try {
-      const saved = JSON.parse(fs.readFileSync(this.pipPath, 'utf8'));
-      if (sameRect(saved.configCam, this.c.layouts.PIP?.cam, 0)) {
-        this.pipRect = saved.rect;
-        this.pipSaved = true;
-      } else {
-        // Une nouvelle position saisie sur /reglages remplace l'ancienne, qu'OBS garde encore : à ne pas reprendre
-        this.camWritten = saved.rect || saved.configCam;
-      }
-    } catch { /* première utilisation : la position actuelle dans OBS sera retenue */ }
+      const { preset } = JSON.parse(fs.readFileSync(this.pipPath, 'utf8'));
+      if (this.validPreset(preset)) this.pipPreset = preset;
+    } catch { /* aucun preset choisi pour l'instant */ }
+    director.caster.pipPreset = this.pipPreset;
     this.link = new ObsLink('PC Stream', this.c.url, this.c.password, m => director.addLog(m), { meters: true });
     this.link.onStatus = v => { director.status.pc2 = v; director.emitState(); };
     this.link.onConnect = () => this.init();
@@ -264,7 +278,33 @@ export class Pc2 {
       }
     }
     this.rects = { game: null, cam: null, room: null };
+    await this.prepareFade();
     await this.render({ instant: true });
+  }
+
+  /** Crée le filtre de fondu au besoin. Sans lui, la caméra apparaît simplement d'un coup */
+  async prepareFade() {
+    this.fadeReady = false;
+    this.camOpacity = 1;
+    this.camMode = null;
+    if (this.ids.cam == null) return;
+    const target = { sourceName: this.c.casterCam, filterName: FADE_FILTER, filterSettings: { opacity: 1 } };
+    try {
+      await this.link.call('SetSourceFilterSettings', target); // remet à 100 % si la régie s'est arrêtée pendant un fondu
+    } catch {
+      try {
+        await this.link.call('CreateSourceFilter', { ...target, filterKind: 'color_filter_v2' });
+      } catch (e) {
+        this.dir.addLog(`⚠️ PC Stream : fondu du PIP casters indisponible (${e.message})`);
+        return;
+      }
+    }
+    this.fadeReady = true;
+  }
+
+  fadeRequest(opacity) {
+    this.camOpacity = opacity;
+    return { requestType: 'SetSourceFilterSettings', requestData: { sourceName: this.c.casterCam, filterName: FADE_FILTER, filterSettings: { opacity } } };
   }
 
   /** Mode casters (OFF / PIP / SPLIT / FULL) */
@@ -281,70 +321,72 @@ export class Pc2 {
     setTimeout(() => this.render().catch(e => this.dir.addLog(`PC Stream : ${e.message}`)), delay);
   }
 
+  validPreset(i) { return Number.isInteger(i) && !!this.c.pipPresets[i]; }
+
+  /** Position du PIP casters hors mosaïque : le preset choisi, sinon celle des réglages. OBS ne la décide jamais */
+  pipCam() {
+    return this.pipPreset === null ? this.c.layouts.PIP.cam : this.c.pipPresets[this.pipPreset].rect;
+  }
+
+  /** PIP casters à l'image, pour que le PIP joueur du PC POV l'évite */
+  casterPipOnAir() {
+    return this.casterMode === 'PIP' ? { cam: this.pipCam(), game: this.c.layouts.PIP.game } : null;
+  }
+
   /** Positions voulues de la capture jeu, de la cam casters et de la cam pièce */
   targets() {
     const L = this.c.layouts[this.casterMode] || this.c.layouts.OFF;
     let game = L.game, cam = L.cam, room = null;
-    if (this.casterMode === 'PIP' && this.pipRect) cam = this.pipRect;
+    if (this.casterMode === 'PIP') cam = this.pipCam();
     if (this.layoutType === 'ROOM' && this.ids.room != null) {
       room = game;      // la pièce prend la place du jeu (plein écran, ou vignette si casters en FULL)
       game = null;
-    } else if (this.layoutType === 'MOSAIC' && game && this.ids.room != null && this.cfg.players.length < MOSAIC_FULL_AT) {
+    } else if (this.layoutType === 'MOSAIC' && game && this.cfg.players.length < MOSAIC_FULL_AT) {
       const [x, y, w, h] = game; // case centrale de la mosaïque 3x3
-      room = [x + w / 3, y + h / 3, w / 3, h / 3];
+      const cell = [x + w / 3, y + h / 3, w / 3, h / 3];
+      // Une seule image dans la case : les casters en PIP s'y calent et la cam pièce leur laisse la place
+      if (this.casterMode === 'PIP' && rectsOverlap(cam, cell)) cam = cell;
+      else if (this.ids.room != null) room = cell;
     }
     return { game, cam, room };
   }
 
-  /** Une position différente de la dernière écrite par la régie, c'est un déplacement fait à la main dans OBS */
-  async syncPipFromObs() {
-    const id = this.ids.cam;
-    if (id == null || (this.renderedMode && !['PIP', 'OFF'].includes(this.renderedMode))) return;
-    let t;
-    try {
-      ({ sceneItemTransform: t } = await this.link.call('GetSceneItemTransform', { sceneName: this.c.scene, sceneItemId: id }));
-    } catch { return; } // élément indisponible : on garde la position connue
-    if (t.boundsType === 'OBS_BOUNDS_NONE' || !(t.boundsWidth > 1) || !(t.boundsHeight > 1)) return; // pas encore placée par la régie
-    const rect = [t.positionX, t.positionY, t.boundsWidth, t.boundsHeight].map(Math.round);
-    if (sameRect(rect, this.camWritten)) return;
-    const L = this.c.layouts;
-    if (sameRect(rect, L.SPLIT?.cam) || sameRect(rect, L.FULL?.cam)) return; // laissée là par un autre mode avant un redémarrage
-    if (this.rects.cam) this.rects.cam = rect; // déjà à l'image : pas de saut vers l'ancienne position
-    this.camWritten = rect;
-    this.setPipRect(sameRect(rect, L.PIP?.cam) ? null : rect);
-  }
-
-  setPipRect(rect) {
-    if (rect === this.pipRect || sameRect(rect, this.pipRect, 0)) return;
-    this.pipRect = rect;
+  /** Choix d'un preset ; null revient à la position des réglages. Hors PIP, il attend le prochain passage en PIP */
+  async setPipPreset(index) {
+    const next = this.validPreset(index) ? index : null;
+    if (next === this.pipPreset) return;
+    this.pipPreset = next;
+    this.dir.caster.pipPreset = next;
     this.savePip();
-    this.dir.addLog(rect ? `PIP casters : position retenue depuis OBS (${rect[0]}, ${rect[1]}, ${rect[2]}×${rect[3]})` : 'PIP casters : retour à la position des réglages');
+    this.dir.addLog(`PIP casters : ${next === null ? 'position des réglages' : `preset « ${this.c.pipPresets[next].name} »`}`);
+    if (this.casterMode !== 'PIP') return;
+    this.onPipChanged();
+    await this.render();
   }
 
-  /** Garde aussi la position des réglages, pour reconnaître plus tard qu'elle a changé sur /reglages */
   savePip() {
     try {
       fs.mkdirSync(path.dirname(this.pipPath), { recursive: true });
-      fs.writeFileSync(this.pipPath, JSON.stringify({ rect: this.pipRect, configCam: this.c.layouts.PIP?.cam }));
-      this.pipSaved = true;
-    } catch { /* disque indisponible : la position reste retenue jusqu'au redémarrage */ }
+      fs.writeFileSync(this.pipPath, JSON.stringify({ preset: this.pipPreset }));
+    } catch { /* disque indisponible : le choix reste valable jusqu'au redémarrage */ }
   }
 
   async render({ instant = false } = {}) {
     if (!this.link.connected) return;
     const token = ++this.tweenToken;
     const scene = this.c.scene;
-    await this.syncPipFromObs();
-    if (!this.pipSaved) this.savePip();
-    if (token !== this.tweenToken) return; // un changement plus récent a pris la main
-    const mode = this.casterMode;
     const targets = this.targets();
     const keys = ['game', 'cam', 'room'].filter(k => this.ids[k] != null);
     const req = (k, type, data) => ({ requestType: type, requestData: { sceneName: scene, sceneItemId: this.ids[k], ...data } });
-    const place = (k, rect) => {
-      if (k === 'cam') this.camWritten = rect;
-      return req(k, 'SetSceneItemTransform', { sceneItemTransform: transform(rect) });
-    };
+    const place = (k, rect) => req(k, 'SetSceneItemTransform', { sceneItemTransform: transform(rect) });
+
+    // Fondu du PIP casters seulement : à son apparition et quand il se cache
+    const fadeOut = !targets.cam && this.camMode === 'PIP';
+    const fadeIn = targets.cam && this.casterMode === 'PIP' && !this.rects.cam && this.camOpacity === 1;
+    if (targets.cam) this.camMode = this.casterMode;
+    const fadeFrom = fadeIn ? 0 : this.camOpacity;
+    const fadeTo = targets.cam ? 1 : fadeOut ? 0 : fadeFrom;
+    const fading = this.fadeReady && fadeFrom !== fadeTo;
 
     if (this.c.muteMicsWhenAbsent && this.c.casterMics?.length) {
       await this.link.batch(this.c.casterMics.map(m => ({ requestType: 'SetInputMute', requestData: { inputName: m, inputMuted: this.casterMode === 'OFF' } })));
@@ -353,7 +395,7 @@ export class Pc2 {
     // Ordre d'empilement d'abord, pour que les apparitions soient directement au bon niveau
     await this.reorder();
 
-    const show = [];
+    const show = fading && fadeIn ? [this.fadeRequest(0)] : []; // transparente avant d'être activée : pas de flash
     for (const k of keys) {
       if (targets[k] && !this.rects[k]) {
         show.push(place(k, targets[k]));
@@ -368,13 +410,18 @@ export class Pc2 {
     for (let s = 1; s <= steps; s++) {
       if (token !== this.tweenToken) return; // une autre animation a pris la main
       const t = s / steps, e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-      await this.link.batch(moving.map(k => place(k, from[k].map((v, i) => v + (targets[k][i] - v) * e))));
+      const step = moving.map(k => place(k, from[k].map((v, i) => v + (targets[k][i] - v) * e)));
+      if (fading) step.push(this.fadeRequest(fadeFrom + (fadeTo - fadeFrom) * e));
+      await this.link.batch(step);
       if (s < steps) await sleep(33);
     }
 
-    await this.link.batch(keys.filter(k => !targets[k]).map(k => req(k, 'SetSceneItemEnabled', { sceneItemEnabled: false })));
+    // Caméra cachée puis opacité remise à 100 % : la détection de présence fait ses captures sur cette même source
+    const hide = keys.filter(k => !targets[k]).map(k => req(k, 'SetSceneItemEnabled', { sceneItemEnabled: false }));
+    if (!targets.cam && this.fadeReady && this.camOpacity !== 1) hide.push(this.fadeRequest(1));
+    await this.link.batch(hide);
+    if (!targets.cam) this.camMode = null;
     this.rects = { ...targets };
-    this.renderedMode = mode;
   }
 
   /** Du bas vers le haut : jeu, pièce, casters — sauf casters en FULL où les vignettes passent devant */

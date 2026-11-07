@@ -79,7 +79,7 @@ export class Director extends EventEmitter {
     this.schedule = { activeIdx: -1, from: null };
     this.log = [];
     this.caster = {
-      mode: 'AUTO', applied: 'OFF', appliedAt: 0, present: false, presenceCalibrated: false,
+      mode: 'AUTO', applied: 'OFF', appliedAt: 0, pipPreset: null, present: false, presenceCalibrated: false,
       speaking: false, lastSpokeAt: 0, talkStartAt: 0
     };
     this.status = { pc1: false, pc2: false, twitch: false, llm: !!(config.llm?.enabled) };

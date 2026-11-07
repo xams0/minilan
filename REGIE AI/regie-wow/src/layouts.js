@@ -24,6 +24,32 @@ export const WEIGHTS = {
   // MOSAIC : 1 / nombre de joueurs (au moins 8), calculé dans cells()
 };
 
+const PIP_MARGIN = 40;
+
+export const rectsOverlap = (a, b) => a[0] < b[0] + b[2] && b[0] < a[0] + a[2] && a[1] < b[1] + b[3] && b[1] < a[1] + a[3];
+
+/** Partie réellement occupée par une image 16:9 dans une zone : OBS la centre et garde ses proportions */
+function fitted16x9([x, y, w, h]) {
+  const iw = Math.min(w, h * 16 / 9), ih = iw * 9 / 16;
+  return [x + (w - iw) / 2, y + (h - ih) / 2, iw, ih];
+}
+
+/** Position du PIP joueur dans l'image du PC POV, en base 1920 × 1080 */
+function playerPipRect(corner) {
+  const w = 480, h = 270;
+  return [corner.includes('right') ? 1920 - w - PIP_MARGIN : PIP_MARGIN, corner.includes('top') ? PIP_MARGIN : 1080 - h - PIP_MARGIN, w, h];
+}
+
+/** Coin du PIP joueur qui ne touche pas le PIP casters : le coin voulu si possible, sinon le plus proche */
+export function freePlayerPipCorner(wanted, casterCam, game) {
+  const [x, y, iw] = fitted16x9(game);
+  const scale = iw / 1920;
+  const onStream = corner => playerPipRect(corner).map((v, i) => (i === 0 ? x + v * scale : i === 1 ? y + v * scale : v * scale));
+  const swap = (s, a, b) => (s.includes(a) ? s.replace(a, b) : s.replace(b, a));
+  const side = swap(wanted, 'left', 'right'), height = swap(wanted, 'top', 'bottom');
+  return [wanted, side, height, swap(side, 'top', 'bottom')].find(c => !rectsOverlap(onStream(c), casterCam)) ?? wanted;
+}
+
 /**
  * Renvoie les cases à afficher : [{ who: index joueur | 'room', rect: [x,y,w,h], weight, top }]
  */
@@ -44,15 +70,10 @@ export function cells(layout, opts = {}) {
       out.push({ who: p[1], rect: r(2 * g + w, y, w, h), weight: 0.5 });
       break;
     }
-    case 'PIP': {
-      const w = 480, h = 270, m = 40;
-      const corner = opts.pipCorner || 'bottom-left';
-      const x = corner.includes('right') ? 1920 - w - m : m;
-      const y = corner.includes('top') ? m : 1080 - h - m;
+    case 'PIP':
       out.push({ who: p[0], rect: r(0, 0, 1920, 1080), weight: 0.75 });
-      out.push({ who: p[1], rect: r(x, y, w, h), weight: 0.25, top: true });
+      out.push({ who: p[1], rect: r(...playerPipRect(opts.pipCorner || 'bottom-left')), weight: 0.25, top: true });
       break;
-    }
     case 'QUAD':
       for (let i = 0; i < 4; i++) {
         out.push({ who: p[i], rect: r((i % 2) * 960, Math.floor(i / 2) * 540, 960, 540), weight: 0.25 });
