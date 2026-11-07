@@ -85,9 +85,21 @@ Un seul fichier qui contient Node et la régie : double-clic, et elle démarre. 
 - **Contrôles :** taille, empreinte SHA-256 fournie par GitHub, version annoncée, et démarrage de test du nouvel exe avant de remplacer l'ancien. Les exe ne sont pas signés : la sécurité repose sur le compte GitHub qui publie.
 - Un exe compilé sans `-Version` (0.0.0) ne se met jamais à jour.
 
-### Steam Deck
+### Stream Deck : plugin et profil 8 × 5
 
-Ouvre **`http://IP_DE_LA_REGIE:PORT/deck`** dans le navigateur du Steam Deck : 40 touches tactiles carrées (8 × 5) sur l'écran 1280 × 800, sans rien installer. Le bouton **Plein écran** retire la barre du navigateur.
+Double-clique sur `streamdeck\dist\RegieIA.streamDeckPlugin` (créé par `streamdeck\build.ps1`, et joint aux Releases `regie-v*`). Il installe le plugin **Régie IA** et propose le profil **RegieIA** pour Stream Deck Mobile, en 8 × 5. Si le profil n'apparaît pas, double-clique sur `RegieIA.streamDeckProfile`.
+
+Le plugin ne contient ni touche, ni lien, ni commande. `src/streamdeck.js`, dans la régie, décide de ce qu'affiche chaque position et traite les appuis. Ajouter un joueur ou changer une touche ne demande donc qu'une mise à jour de `RegieIA.exe`.
+
+- **Adresse :** `127.0.0.1:8081` par défaut. Si la régie tourne sur un autre PC ou un autre port, clique sur une touche dans le logiciel Stream Deck et change l'adresse dans l'inspecteur : elle vaut pour toutes les touches.
+- **POV 1 à 9, à droite :** appui = plein écran, avec l'image du POV dans la touche.
+- **PIP, Split, Quad :** appuie sur le plan, puis sur les joueurs. Pour un PIP, le premier joueur est le plan principal. Un second appui sur le plan annule.
+- **Caméras :** Pièce (la caméra de `pc2.roomCam`), et la ligne Casters pour la caméra des casters (Auto, Off, PIP, Split, Plein écran).
+- **Autres :** modes, verrou, suggestion, classement, vote, privé, projecteurs, état des connexions et des agents.
+
+### Page tactile (tablette, Steam Deck)
+
+Ouvre **`http://IP_DE_LA_REGIE:PORT/deck`** dans un navigateur : 40 touches tactiles carrées (8 × 5) en 1280 × 800, sans rien installer. Le bouton **Plein écran** retire la barre du navigateur. Ses touches sont écrites dans `public/deck.html`, pas dans `src/streamdeck.js`.
 
 | Ligne | Touches |
 |---|---|
@@ -98,7 +110,7 @@ Ouvre **`http://IP_DE_LA_REGIE:PORT/deck`** dans le navigateur du Steam Deck : 4
 
 Split, PIP et Quad : appuie sur le plan, puis sur les joueurs. Le plan part au dernier joueur choisi, et un second appui sur le plan annule. Privé : appuie dessus, puis sur le joueur.
 
-### Stream Deck
+### Stream Deck sans plugin
 
 Avec l'action « Site web » (en arrière-plan) ou le plugin API Ninja, appelle une de ces adresses :
 
@@ -240,7 +252,9 @@ Il est aussi multiplié par la place laissée au jeu par les casters : 0,9 en PI
 | `src/llm.js` | Couche Claude optionnelle |
 | `agent/exe/` | Agent joueur avec interface (`AgentRegie.exe`). `CombatLog.cs` et `LogFinder.cs` doivent garder la même logique que `agent.mjs`. `Updater.cs` sert aussi à `RegieIA.exe` |
 | `launcher/` | `RegieIA.exe` : lance la régie sans npm, Node inclus |
-| `public/deck.html` | Pupitre tactile 8 × 5 pour Steam Deck (`/deck`) |
+| `public/deck.html` | Page tactile 8 × 5 (`/deck`) |
+| `src/streamdeck.js` | Touches du Stream Deck : ce qu'affiche chaque position, ce que fait chaque appui |
+| `streamdeck/` | Plugin Stream Deck et génération du profil |
 | `agent/agent.mjs` | Lecteur de combat log en ligne de commande, à lancer sur chaque PC joueur |
 | `src/run.js` | Lance le serveur et le relance à la demande de la page de réglages |
 | `src/settings.js` | Lecture, validation et écriture de `config.json`, test de connexion OBS |

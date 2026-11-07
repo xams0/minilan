@@ -1,0 +1,53 @@
+{
+  "Name": "Régie IA",
+  "UUID": "fr.lanppart.regieia",
+  "Version": "1.0.0.0",
+  "Author": "Lanppart",
+  "Description": "Pilote la Régie IA : POV, PIP, caméras, casters et modes. Les touches viennent de la régie, rien n'est écrit dans le plugin.",
+  "URL": "https://lanppart.fr",
+  "Category": "Régie IA",
+  "CategoryIcon": "images/category",
+  "Icon": "images/plugin",
+  "CodePath": "plugin.html",
+  "PropertyInspectorPath": "pi.html",
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "6.4"
+  },
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    },
+    {
+      "Platform": "mac",
+      "MinimumVersion": "10.15"
+    }
+  ],
+  "Profiles": [
+    {
+      "Name": "RegieIA",
+      "DeviceType": 3,
+      "Readonly": false,
+      "DontAutoSwitchWhenInstalled": false
+    }
+  ],
+  "Actions": [
+    {
+      "UUID": "fr.lanppart.regieia.touche",
+      "Name": "Touche Régie",
+      "Tooltip": "Affiche ce que la régie a prévu à cette position, et lui transmet l'appui.",
+      "Icon": "images/action",
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "images/touche",
+          "ShowTitle": false
+        }
+      ],
+      "Controllers": [
+        "Keypad"
+      ]
+    }
+  ]
+}

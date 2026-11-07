@@ -11,6 +11,7 @@ import { Pc1, Pc2 } from './obs.js';
 import { TwitchChat } from './twitch.js';
 import { LlmDirector } from './llm.js';
 import { createSettingsApi, withDefaults } from './settings.js';
+import { StreamDeckSurface } from './streamdeck.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Avec RegieIA.exe, le programme est remplacé à chaque mise à jour : config.json et data/ restent à côté de l'exe
@@ -43,15 +44,23 @@ const broadcast = (roles, obj) => {
   for (const c of clients) if (roles.includes(c.role) && c.ws.readyState === 1) c.ws.send(s);
 };
 
+// ---- Stream Deck : les touches sont décidées ici, le plugin ne fait que les dessiner ----
+const streamDeck = new StreamDeckSurface({
+  config,
+  getState: () => director.getState(),
+  send: m => handleCommand({ role: 'panel' }, m)
+});
+const sendStreamDeckKeys = () => broadcast(['streamdeck'], streamDeck.message());
+
 // ---- OBS ----
 const pc1 = new Pc1(config, director, {
   onTags: (slot, tags, canvas) => { lastTags[slot] = { type: 'tags', slot, tags, canvas }; broadcast(['tags'], lastTags[slot]); },
-  onThumbs: thumbs => { lastThumbs = { ...lastThumbs, ...thumbs }; broadcast(['panel'], { type: 'thumbs', thumbs }); }
+  onThumbs: thumbs => { lastThumbs = { ...lastThumbs, ...thumbs }; broadcast(['panel', 'streamdeck'], { type: 'thumbs', thumbs }); }
 });
 const pc2 = new Pc2(config, director, {
   dataDir: DATA,
-  onThumb: uri => { lastCasterThumb = uri; broadcast(['panel'], { type: 'casterThumb', uri }); },
-  onRoomThumb: uri => { lastRoomThumb = uri; broadcast(['panel'], { type: 'roomThumb', uri }); }
+  onThumb: uri => { lastCasterThumb = uri; broadcast(['panel', 'streamdeck'], { type: 'casterThumb', uri }); },
+  onRoomThumb: uri => { lastRoomThumb = uri; broadcast(['panel', 'streamdeck'], { type: 'roomThumb', uri }); }
 });
 director.output.applyLayout = layout => { pc2.setLayout(layout); return pc1.applyLayout(layout); };
 director.output.applyCaster = mode => pc2.applyCaster(mode);
@@ -70,6 +79,7 @@ director.on('state', () => {
     const st = director.getState();
     st.unknownRewards = [...twitch.unknownRewards.values()];
     broadcast(['panel', 'joueur'], { type: 'state', state: st });
+    sendStreamDeckKeys();
   }, 250);
 });
 director.on('overlay', o => broadcast(['overlay'], { ...o, kind: o.type, type: 'overlay' }));
@@ -83,6 +93,10 @@ setInterval(() => director.tick(), 1000);
 // ---- Commandes du panneau et des joueurs ----
 function handleCommand(client, m) {
   const d = director;
+  if (client.role === 'streamdeck') {
+    if (m.cmd === 'press') { streamDeck.press(m.col, m.row); sendStreamDeckKeys(); }
+    return;
+  }
   if (client.role === 'joueur') {
     if (m.cmd === 'private' && m.i === client.player) d.setPrivate(m.i, m.value);
     return;
@@ -175,7 +189,8 @@ wss.on('connection', (ws, req) => {
     send(ws, { type: 'config', players: config.players.map(p => p.name), hasRoom: director.hasRoom, voteSeconds: config.twitch.voteSeconds });
     send(ws, { type: 'state', state: { ...director.getState(), unknownRewards: [...twitch.unknownRewards.values()] } });
   }
-  if (client.role === 'panel') {
+  if (client.role === 'streamdeck') send(ws, streamDeck.message());
+  if (client.role === 'panel' || client.role === 'streamdeck') {
     send(ws, { type: 'thumbs', thumbs: lastThumbs });
     if (lastCasterThumb) send(ws, { type: 'casterThumb', uri: lastCasterThumb });
     if (lastRoomThumb) send(ws, { type: 'roomThumb', uri: lastRoomThumb });

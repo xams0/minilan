@@ -29,9 +29,10 @@ jobs:
         run: |
           $version = $env:GITHUB_REF_NAME.Substring('regie-v'.Length)
           & 'REGIE AI/regie-wow/launcher/build.ps1' -Version $version
+          & 'REGIE AI/regie-wow/streamdeck/build.ps1'
 
       - name: Publier
         shell: powershell
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create $env:GITHUB_REF_NAME 'REGIE AI/regie-wow/launcher/dist/RegieIA.exe' --title "RegieIA $env:GITHUB_REF_NAME" --generate-notes
+        run: gh release create $env:GITHUB_REF_NAME 'REGIE AI/regie-wow/launcher/dist/RegieIA.exe' 'REGIE AI/regie-wow/streamdeck/dist/RegieIA.streamDeckPlugin' 'REGIE AI/regie-wow/streamdeck/dist/RegieIA.streamDeckProfile' --title "RegieIA $env:GITHUB_REF_NAME" --generate-notes

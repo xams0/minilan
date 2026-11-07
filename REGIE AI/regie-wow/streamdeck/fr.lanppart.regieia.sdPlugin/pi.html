@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Régie IA : réglages</title>
+    <style>
+        /* Inspecteur de propriétés : aux couleurs du logiciel Stream Deck (fond #2d2d2d). */
+        body { margin: 0; padding: 8px 10px; background: #2d2d2d; color: #d8d8d8; font: 9pt "Segoe UI", Arial, sans-serif; }
+        .ligne { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; }
+        .ligne label { flex: 0 0 92px; text-align: right; color: #969696; }
+        .ligne input { flex: 1; min-width: 0; height: 26px; padding: 0 6px; background: #3d3d3d; color: #d8d8d8; border: none; border-radius: 3px; font: inherit; }
+        .aide { margin: 2px 0 10px 100px; color: #7a7a7a; font-size: 8pt; line-height: 1.4; }
+        .test { margin-left: 100px; font-size: 8pt; }
+        .test.ok { color: #35e6a0; } .test.ko { color: #ff4470; }
+    </style>
+</head>
+<body>
+    <div class="ligne">
+        <label for="adresse">Adresse de la régie</label>
+        <input id="adresse" type="text" placeholder="127.0.0.1:8081">
+    </div>
+    <div class="aide">Commune à toutes les touches. La fenêtre de RegieIA.exe indique son port. Les touches viennent de la régie : rien d'autre à régler ici.</div>
+    <div class="test" id="test"></div>
+    <script>
+        var ws, uuid, glob = {};
+        var $ = function (id) { return document.getElementById(id); };
+        function envoyer(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
+        function nettoyer() { return ($('adresse').value || '127.0.0.1:8081').trim().replace(/^https?:\/\//i, '').replace(/\/+$/, ''); }
+        function tester() {
+            var a = nettoyer(), s, fini = false;
+            function resultat(ok) {
+                if (fini) return;
+                fini = true;
+                $('test').className = 'test ' + (ok ? 'ok' : 'ko');
+                $('test').textContent = (ok ? '✓ Régie joignable (' : '✗ Régie injoignable (') + a + ')';
+                try { s.close(); } catch (e) {}
+            }
+            $('test').className = 'test'; $('test').textContent = 'Test de la régie…';
+            try { s = new WebSocket('ws://' + a + '/ws?role=test'); } catch (e) { resultat(false); return; }
+            s.onopen = function () { resultat(true); };
+            s.onerror = function () { resultat(false); };
+            setTimeout(function () { resultat(false); }, 3000);
+        }
+        window.connectElgatoStreamDeckSocket = function (port, inUUID, inscription) {
+            uuid = inUUID;
+            ws = new WebSocket('ws://127.0.0.1:' + port);
+            ws.onopen = function () {
+                envoyer({ event: inscription, uuid: uuid });
+                envoyer({ event: 'getGlobalSettings', context: uuid });
+            };
+            ws.onmessage = function (m) {
+                var d = JSON.parse(m.data);
+                if (d.event === 'didReceiveGlobalSettings') {
+                    glob = (d.payload && d.payload.settings) || {};
+                    $('adresse').value = glob.adresse || '';
+                    tester();
+                }
+            };
+            $('adresse').addEventListener('change', function () {
+                glob.adresse = nettoyer();
+                // Le plugin lit le changement à sa prochaine demande : il le reçoit aussitôt par l'événement du logiciel
+                envoyer({ event: 'setGlobalSettings', context: uuid, payload: glob });
+                tester();
+            });
+        };
+    </script>
+</body>
+</html>
