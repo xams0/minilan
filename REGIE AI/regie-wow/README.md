@@ -72,7 +72,7 @@ Un seul fichier qui contient Node et la régie : double-clic, et elle démarre. 
 - Mets-le dans un dossier à lui. `config.json` et `data/` restent à côté de l'exe et ne sont jamais touchés par une mise à jour. Le programme est extrait dans `app/`.
 - Sans `config.json`, elle démarre avec la config de base de l'installation Lanppart (`config.example.json`), prévue pour tourner sur le PC Stream. `/reglages` crée ensuite le fichier.
 - Pour reprendre une installation existante, copie `config.json` et `data/` à côté de l'exe : ce fichier passe avant la config de base.
-- La fenêtre donne l'accès au panneau et aux réglages, l'adresse à taper sur le Steam Deck, le bouton **Préparer OBS** (l'équivalent de `npm run setup-obs`) et le journal. La fermer arrête la régie, après confirmation.
+- La fenêtre donne l'accès au panneau et aux réglages, l'adresse à taper sur le Steam Deck, le bouton **Préparer OBS** (l'équivalent de `npm run setup-obs -- --regie http://IP:PORT --no-overlay` : il n'ajoute pas `REGIE_OVERLAY`) et le journal. La fermer arrête la régie, après confirmation.
 - Pour le compiler : `launcher\build.ps1 -Version 1.2.0`, avec Node installé sur le PC qui compile.
 
 ### Mises à jour automatiques

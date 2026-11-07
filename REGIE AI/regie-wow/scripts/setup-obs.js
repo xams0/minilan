@@ -15,6 +15,7 @@ const cfgPath = fs.existsSync(path.join(HOME, 'config.json')) ? path.join(HOME, 
 const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
 const i = process.argv.indexOf('--regie');
 const regie = (i > 0 ? process.argv[i + 1] : `http://localhost:${cfg.port}`).replace(/\/$/, '');
+const withOverlay = !process.argv.includes('--no-overlay'); // --no-overlay : n'ajoute pas REGIE_OVERLAY au PC Stream
 
 async function connect(name, c) {
   const obs = new OBSWebSocket();
@@ -107,15 +108,17 @@ async function setupPc2() {
     } else console.log(`  ⚠ source introuvable : ${s}`);
   }
   for (const m of c.casterMics || []) if (!inputs.has(m)) console.log(`  ⚠ micro caster introuvable : ${m}`);
-  const name = 'REGIE_OVERLAY';
-  const url = `${regie}/overlay/stream`;
-  const [W, H] = c.canvas;
-  if (!inputs.has(name)) {
-    await obs.call('CreateInput', { sceneName: c.scene, inputName: name, inputKind: 'browser_source', inputSettings: { url, width: W, height: H } });
-    console.log(`  + overlay régie (${name}) → ${url}`);
-  } else {
-    await obs.call('SetInputSettings', { inputName: name, inputSettings: { url, width: W, height: H } });
-    if (!inScene.has(name)) await obs.call('CreateSceneItem', { sceneName: c.scene, sourceName: name });
+  if (withOverlay) {
+    const name = 'REGIE_OVERLAY';
+    const url = `${regie}/overlay/stream`;
+    const [W, H] = c.canvas;
+    if (!inputs.has(name)) {
+      await obs.call('CreateInput', { sceneName: c.scene, inputName: name, inputKind: 'browser_source', inputSettings: { url, width: W, height: H } });
+      console.log(`  + overlay régie (${name}) → ${url}`);
+    } else {
+      await obs.call('SetInputSettings', { inputName: name, inputSettings: { url, width: W, height: H } });
+      if (!inScene.has(name)) await obs.call('CreateSceneItem', { sceneName: c.scene, sourceName: name });
+    }
   }
   console.log(`  Dock de pilotage : OBS > Docks > Docks de navigateur personnalisés > URL ${regie}/dock`);
   obs.disconnect();

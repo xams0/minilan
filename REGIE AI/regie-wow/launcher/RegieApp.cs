@@ -131,10 +131,16 @@ namespace AgentRegie
             catch (Exception) { /* déjà arrêté */ }
         }
 
-        /// <summary>Prépare les scènes OBS (scripts/setup-obs.js), la sortie s'affiche dans le journal</summary>
-        public void RunSetupObs()
+        /// <summary>
+        /// Prépare les scènes OBS (scripts/setup-obs.js), la sortie s'affiche dans le journal.
+        /// regie : adresse réseau de la régie, écrite dans les sources du PC POV (localhost y serait faux).
+        /// REGIE_OVERLAY n'est pas ajouté : ce choix est fait à la main dans OBS.
+        /// </summary>
+        public void RunSetupObs(string regie)
         {
-            var p = new Process { StartInfo = Node(@"scripts\setup-obs.js"), EnableRaisingEvents = true };
+            ProcessStartInfo info = Node(@"scripts\setup-obs.js");
+            info.Arguments += " --regie \"" + regie + "\" --no-overlay";
+            var p = new Process { StartInfo = info, EnableRaisingEvents = true };
             p.Exited += (s, e) => Say("Préparation d'OBS terminée (code " + p.ExitCode + ").");
             Pipe(p);
         }

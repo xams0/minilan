@@ -153,7 +153,10 @@ namespace AgentRegie
             btnSettings.Click += (s, e) => Open("/reglages");
             btnObs.Click += (s, e) =>
             {
-                if (Ask("Créer ou compléter les scènes de la régie dans les OBS réglés dans config.json ?")) app.RunSetupObs();
+                string ip = LanAddress();
+                if (port == 0 || ip == null) { AddLog("Préparer OBS : lance d'abord la régie, son adresse réseau est nécessaire."); return; }
+                string regie = "http://" + ip + ":" + port;
+                if (Ask("Créer ou compléter les scènes de la régie dans les OBS réglés dans config.json, avec l'adresse " + regie + " ?")) app.RunSetupObs(regie);
             };
             btnUpdate.Click += (s, e) =>
             {
