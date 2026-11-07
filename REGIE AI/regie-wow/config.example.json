@@ -172,6 +172,7 @@
     "model": "claude-haiku-5-5",
     "everySec": 45
   },
+  "scheduleEnabled": false,
   "schedule": [
     {
       "minute": 0,

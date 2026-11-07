@@ -182,7 +182,9 @@ const SECTIONS = [
     { p: 'llm.model', l: 'Modèle', t: 'text' },
     { p: 'llm.everySec', l: 'Suggestion toutes les (s)', t: 'num', min: 1 }
   ] },
-  { id: 'schedule', title: 'Planning', intro: 'Change de mode automatiquement chaque heure, sur les minutes indiquées.', custom: 'schedule' }
+  { id: 'schedule', title: 'Planning', intro: 'Change de mode automatiquement chaque heure, sur les minutes indiquées.', fields: [
+    { p: 'scheduleEnabled', l: 'Activer le planning', t: 'bool', h: 'Désactivé, les créneaux restent enregistrés mais le mode ne change plus tout seul. Le mode Chat a besoin de Twitch.' }
+  ], custom: 'schedule' }
 ];
 
 let cfg, saved, runtime, rewardRows = [];

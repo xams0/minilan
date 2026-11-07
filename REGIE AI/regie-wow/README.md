@@ -221,7 +221,7 @@ Il est aussi multiplié par la place laissée au jeu par les casters : 0,9 en PI
   - colle-le dans `twitch.rewards` : `{ "ID": "spotlight" }`.
   - Autres actions possibles : `"split"` (deux joueurs au hasard) et `"mosaic"`.
 - Pour que le bot annonce dans le chat, remplis `botUsername` et `oauthToken` (un token de chat). Sans token, la régie lit le chat en anonyme et tout s'affiche dans l'overlay.
-- **Planning** : par défaut le mode CHAT se lance de hh:00 à hh:15, puis on revient en AUTO. C'est modifiable dans `schedule`.
+- **Planning** : désactivé par défaut. Une fois activé sur `/reglages` (**Activer le planning**), le créneau de base lance le mode CHAT de hh:00 à hh:15, puis revient en AUTO. Sans Twitch, personne ne peut voter : laisse-le désactivé.
 
 ### MANUEL
 

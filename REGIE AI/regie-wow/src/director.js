@@ -404,6 +404,7 @@ export class Director extends EventEmitter {
   }
 
   runSchedule(t) {
+    if (!this.cfg.scheduleEnabled) return;
     const sched = this.cfg.schedule || [];
     const d = new Date(t);
     const minute = d.getMinutes() + d.getSeconds() / 60;
