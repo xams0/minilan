@@ -79,6 +79,7 @@ director.on('state', () => {
     const st = director.getState();
     st.unknownRewards = [...twitch.unknownRewards.values()];
     broadcast(['panel', 'joueur'], { type: 'state', state: st });
+    broadcast(['journal'], { type: 'journal', list: st.journal, players: director.logSummary() });
     sendStreamDeckKeys();
   }, 250);
 });
@@ -120,7 +121,7 @@ function handleCommand(client, m) {
 }
 
 // ---- HTTP ----
-const PAGES = { '/': 'panel.html', '/panel': 'panel.html', '/dock': 'dock.html', '/deck': 'deck.html', '/reglages': 'reglages.html', '/joueur': 'joueur.html', '/overlay/tags': 'overlay-tags.html', '/overlay/stream': 'overlay-stream.html' };
+const PAGES = { '/': 'panel.html', '/panel': 'panel.html', '/dock': 'dock.html', '/deck': 'deck.html', '/reglages': 'reglages.html', '/joueur': 'joueur.html', '/overlay/tags': 'overlay-tags.html', '/overlay/stream': 'overlay-stream.html', '/overlay/journal': 'overlay-journal.html', '/journal': 'overlay-journal.html', '/logs': 'logs.html' };
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml' };
 
 const RESTART_CODE = 75; // compris par src/run.js
@@ -189,6 +190,7 @@ wss.on('connection', (ws, req) => {
     send(ws, { type: 'config', players: config.players.map(p => p.name), hasRoom: director.hasRoom, voteSeconds: config.twitch.voteSeconds });
     send(ws, { type: 'state', state: { ...director.getState(), unknownRewards: [...twitch.unknownRewards.values()] } });
   }
+  if (client.role === 'journal') send(ws, { type: 'journal', list: director.journal, players: director.logSummary() });
   if (client.role === 'streamdeck') send(ws, streamDeck.message());
   if (client.role === 'panel' || client.role === 'streamdeck') {
     send(ws, { type: 'thumbs', thumbs: lastThumbs });
@@ -205,8 +207,9 @@ wss.on('connection', (ws, req) => {
 server.listen(config.port, '0.0.0.0', () => {
   console.log(`Régie prête : http://localhost:${config.port}  (panneau)`);
   console.log(`  Réglages (depuis ce PC uniquement) : http://127.0.0.1:${config.port}/reglages`);
-  console.log(`  Overlays : /overlay/tags?slot=A, /overlay/tags?slot=B (PC POV), /overlay/stream (PC Stream)`);
+  console.log(`  Overlays : /overlay/tags?slot=A, /overlay/tags?slot=B (PC POV), /overlay/stream, /overlay/journal (PC Stream)`);
   console.log(`  Dock OBS (PC Stream) : /dock   ·   Steam Deck : /deck   ·   Stream Deck : /api/cmd?cmd=mode&mode=CHAT`);
+  console.log(`  Logs reçus par joueur : /logs   ·   Pourquoi le plan change : /journal`);
   console.log(`  Page joueur : /joueur?p=1 … /joueur?p=${config.players.length}`);
 });
 

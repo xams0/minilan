@@ -34,7 +34,7 @@ namespace AgentRegie
         readonly RegieApp app = new RegieApp();
 
         readonly Label dotState = new Label(), lblState = new Label(), lblDeck = new Label(), lblVersion = new Label();
-        readonly Button btnStart = new Button(), btnPanel = new Button(), btnSettings = new Button(), btnObs = new Button(), btnUpdate = new Button();
+        readonly Button btnStart = new Button(), btnPanel = new Button(), btnSettings = new Button(), btnLogs = new Button(), btnObs = new Button(), btnUpdate = new Button();
         readonly TextBox txtLog = new TextBox();
         readonly ToolTip tips = new ToolTip();
         readonly System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer { Interval = 1000 };
@@ -79,7 +79,7 @@ namespace AgentRegie
             b.BackColor = Raised;
             b.ForeColor = Ink;
             b.UseVisualStyleBackColor = false;
-            b.Size = new Size(128, 34);
+            b.Size = new Size(106, 34);
             b.Margin = new Padding(0, 0, 8, 8);
         }
 
@@ -120,9 +120,10 @@ namespace AgentRegie
             Style(btnStart, "Démarrer");
             Style(btnPanel, "Panneau");
             Style(btnSettings, "Réglages");
+            Style(btnLogs, "Logs");
             Style(btnObs, "Préparer OBS");
-            buttons.Controls.AddRange(new Control[] { btnStart, btnPanel, btnSettings, btnObs });
-            btnStart.Enabled = btnPanel.Enabled = btnSettings.Enabled = false;
+            buttons.Controls.AddRange(new Control[] { btnStart, btnPanel, btnSettings, btnLogs, btnObs });
+            btnStart.Enabled = btnPanel.Enabled = btnSettings.Enabled = btnLogs.Enabled = false;
 
             txtLog.Multiline = true;
             txtLog.ReadOnly = true;
@@ -151,6 +152,7 @@ namespace AgentRegie
             btnStart.Click += (s, e) => { if (app.Running) ConfirmStop(); else app.Start(); };
             btnPanel.Click += (s, e) => Open("/");
             btnSettings.Click += (s, e) => Open("/reglages");
+            btnLogs.Click += (s, e) => Open("/logs");
             btnObs.Click += (s, e) =>
             {
                 string ip = LanAddress();
@@ -225,7 +227,7 @@ namespace AgentRegie
         {
             btnStart.Enabled = startDecided;
             btnStart.Text = running ? "Arrêter" : "Démarrer";
-            btnPanel.Enabled = btnSettings.Enabled = running && port > 0;
+            btnPanel.Enabled = btnSettings.Enabled = btnLogs.Enabled = running && port > 0;
             dotState.ForeColor = running ? Win : Danger;
             lblState.Text = running ? (port > 0 ? "En marche sur le port " + port : "Démarrage…") : "Arrêtée";
             string ip = LanAddress();

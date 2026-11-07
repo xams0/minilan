@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logs par joueur</title>
+<style>
+  /* Joueur par joueur : l'agent est-il connecté, et que reçoit la régie ? Utilisable aussi en dock OBS. */
+  :root { --void: #05070d; --panel: #0b111e; --raised: #0f1729; --line: #2c3c60; --ink: #e8ecf5; --dim: #8c98b8; --cyan: #35e6ff; --violet: #8b6bff; --win: #35e6a0; --warn: #ffb648; --live: #ff4470; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; background: var(--void); color: var(--ink); font: 15px "Segoe UI", system-ui, sans-serif; }
+  #box { position: relative; max-width: 980px; margin: 0 auto; padding: 18px 20px; background: var(--panel); }
+  #box::before, #box::after { content: ""; position: absolute; width: 18px; height: 18px; pointer-events: none; }
+  #box::before { left: 0; top: 0; border-left: 2px solid var(--cyan); border-top: 2px solid var(--cyan); }
+  #box::after { right: 0; bottom: 0; border-right: 2px solid var(--violet); border-bottom: 2px solid var(--violet); }
+  h1 { margin: 0; font-size: 18px; letter-spacing: .04em; }
+  #sum { margin: 4px 0 14px; color: var(--dim); font-size: 14px; }
+  #off { display: none; margin-bottom: 12px; color: var(--warn); font-weight: 600; }
+  body.off #off { display: block; }
+  body.off #list { opacity: .35; }
+  .p { display: grid; grid-template-columns: 150px 170px 1fr; gap: 4px 14px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+  .n { font-weight: 700; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .s { font-weight: 600; font-size: 14px; }
+  .s::before { content: "● "; }
+  .ok { color: var(--win); } .wait { color: var(--warn); } .no { color: var(--live); }
+  .e { min-width: 0; }
+  .e small { display: block; color: var(--dim); font-size: 13px; }
+  .e b { font-weight: 600; }
+  @media (max-width: 620px) { .p { grid-template-columns: 1fr auto; } .e { grid-column: 1 / -1; } }
+</style>
+</head>
+<body>
+<div id="box">
+  <h1>Logs reçus par joueur</h1>
+  <div id="sum"></div>
+  <div id="off">Régie injoignable, nouvelle tentative…</div>
+  <div id="list"></div>
+</div>
+<script>
+const list = document.getElementById('list'), sum = document.getElementById('sum');
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const ago = s => (s < 60 ? `il y a ${s} s` : s < 3600 ? `il y a ${Math.floor(s / 60)} min` : `il y a ${Math.floor(s / 3600)} h`);
+const COUNTS = [['death', 'mort'], ['kill', 'kill'], ['boss_start', 'pull'], ['dmg_out', 'dégâts infligés'], ['dmg_in', 'dégâts subis'], ['cast', 'sorts']];
+
+function row(p) {
+  const r = el('div', 'p');
+  r.append(el('div', 'n', p.name));
+  const got = Object.keys(p.counts).length > 0;
+  if (!p.connected) r.append(el('div', 's no', p.everSeen ? `Agent perdu ${ago(p.seenAgoSec)}` : 'Agent absent'));
+  else if (!got) r.append(el('div', 's wait', 'Connecté, rien reçu'));
+  else r.append(el('div', 's ok', 'Logs reçus'));
+
+  const e = el('div', 'e');
+  if (got) {
+    const last = el('b', '', p.lastLabel);
+    e.append(last, document.createTextNode(` ${ago(p.lastAgoSec)}${p.lastAge > 0 ? `, écrit par WoW avec ${p.lastAge >= 60 ? '60 s ou plus' : p.lastAge + ' s'} de retard` : ''}`));
+    e.append(el('small', '', COUNTS.filter(([k]) => p.counts[k]).map(([k, l]) => `${p.counts[k]} ${l}`).join(' · ')));
+  } else if (p.connected) {
+    e.append(el('small', '', 'WoW écrit le log à la fin des combats. Vérifie aussi que /combatlog est actif.'));
+  } else {
+    e.append(el('small', '', 'Lance AgentRegie.exe sur le PC de ce joueur.'));
+  }
+  r.append(e);
+  return r;
+}
+
+function show(players) {
+  const on = players.filter(p => p.connected).length;
+  const receiving = players.filter(p => Object.keys(p.counts).length).length;
+  sum.textContent = `${on}/${players.length} agents connectés · ${receiving}/${players.length} joueurs ont envoyé des événements depuis le démarrage de la régie`;
+  list.replaceChildren(...players.map(row));
+}
+
+function connect() {
+  const ws = new WebSocket(`ws://${location.host}/ws?role=journal`);
+  ws.onopen = () => document.body.classList.remove('off');
+  ws.onmessage = e => { const m = JSON.parse(e.data); if (m.type === 'journal' && m.players) show(m.players); };
+  ws.onclose = () => { document.body.classList.add('off'); setTimeout(connect, 1500); };
+}
+connect();
+</script>
+</body>
+</html>

@@ -20,8 +20,23 @@ const KEPT_WHEN_LATE = new Set(['death', 'kill', 'boss_kill', 'boss_wipe']);
 const AGGREGATED = new Set(['dmg_out', 'dmg_in', 'heal', 'cast']);
 const LABELS = {
   death: 'Mort de', boss_start: 'Pull de boss', boss_kill: 'Boss tombé', boss_wipe: 'Wipe',
-  level: 'Level up de', kill: 'Kill de', dmg_in: 'En danger :', dmg_out: 'Combat de', shout: 'Ça crie chez'
+  level: 'Level up de', kill: 'Kill de', dmg_in: 'En danger :', dmg_out: 'Combat de', shout: 'Ça crie chez',
+  interrupt: 'Interruption de', res: 'Résurrection par'
 };
+const KIND_NAMES = {
+  death: 'Mort', kill: 'Kill', boss_start: 'Pull de boss', boss_kill: 'Boss tombé', boss_wipe: 'Wipe', interrupt: 'Interruption', res: 'Résurrection',
+  dmg_out: 'Dégâts infligés', dmg_in: 'Dégâts subis', heal: 'Soin', cast: 'Sort lancé', level: 'Level up'
+};
+const AGENT_SEEN_MS = 15000;
+const CAUSE_OF_SOURCE = { manual: 'MANUEL', chat: 'CHAT', spotlight: 'PROJECTEUR' };
+const JOURNAL_SIZE = 12;
+
+/** Ce qui a rendu ces joueurs « chauds » : le combat log, leur micro, ou autre chose */
+function causeOf(players) {
+  if (players.some(p => p.lastKind && p.lastKind !== 'shout')) return 'LOGS';
+  return players.some(p => p.lastKind === 'shout') ? 'MICRO' : 'ACTION';
+}
+const logAgeOf = players => players.map(p => p.lastKindAge).find(a => a != null);
 const INTEREST_CAP = 10;
 const HALF_LIFE_SEC = 8;
 const MODES = ['AUTO', 'CHAT', 'MANUEL'];
@@ -39,7 +54,8 @@ export class Director extends EventEmitter {
     this.players = config.players.map((p, i) => ({
       i, name: p.name, interest: 0, motion: 0, motionKnown: false, lastMotionAt: 0,
       lastEventAt: 0, urgentAt: 0, lastKind: null, events: [], private: false, afk: false,
-      speaking: false, agentSeenAt: 0, screenTime: 0
+      speaking: false, agentSeenAt: 0, screenTime: 0,
+      logs: { counts: {}, lastAt: 0, lastKind: null, lastAge: null }
     }));
     this.N = this.players.length;
     this.mode = 'AUTO';
@@ -48,6 +64,7 @@ export class Director extends EventEmitter {
     const t = this.now();
     this.current = { layout: { type: 'MOSAIC', players: [] }, since: t, reason: 'Démarrage', source: 'auto', timedUntil: 0 };
     this.suggestion = null;
+    this.journal = []; // pourquoi le plan change, et les événements reçus des logs : le plus récent d'abord
     this.distributed = 0;
     this.startedAt = t;
     this.lastMosaicAt = t;
@@ -82,7 +99,7 @@ export class Director extends EventEmitter {
     p.lastEventAt = t;
     if (URGENT.has(kind) && !extra.late) p.urgentAt = t;
     // Le "dernier type" sert à expliquer la décision : on garde le plus marquant des 5 dernières secondes
-    if (URGENT.has(kind) || t - prevAt > 5000 || EVENT_WEIGHTS[kind] >= (EVENT_WEIGHTS[p.lastKind] ?? 0)) p.lastKind = kind;
+    if (URGENT.has(kind) || t - prevAt > 5000 || EVENT_WEIGHTS[kind] >= (EVENT_WEIGHTS[p.lastKind] ?? 0)) { p.lastKind = kind; p.lastKindAge = extra.age ?? null; }
     p.events.push({ t, kind });
     if (p.events.length > 400) p.events.splice(0, p.events.length - 400);
   }
@@ -92,15 +109,50 @@ export class Director extends EventEmitter {
     const p = this.players[i];
     if (!p) return;
     const fresh = {};
+    let noted = false;
     for (const { kind, n, age = 0 } of events) {
-      if (age <= this.d.maxEventAgeSec) fresh[kind] = (fresh[kind] || 0) + n;
-      else if (KEPT_WHEN_LATE.has(kind)) for (let k = 0; k < Math.min(n, 3); k++) this.addEvent(i, kind, { late: true });
+      if (EVENT_WEIGHTS[kind]) {
+        // Compté même en retard : /logs dit ce qui est arrivé, pas ce qui a fait changer le plan
+        p.logs.counts[kind] = (p.logs.counts[kind] || 0) + n;
+        p.logs.lastAt = this.now();
+        if (!noted || !AGGREGATED.has(kind)) { p.logs.lastKind = kind; p.logs.lastAge = age; }
+      }
+      const late = age > this.d.maxEventAgeSec;
+      if (!late) fresh[kind] = { n: (fresh[kind]?.n || 0) + n, age: Math.min(age, fresh[kind]?.age ?? age) };
+      else if (KEPT_WHEN_LATE.has(kind)) for (let k = 0; k < Math.min(n, 3); k++) this.addEvent(i, kind, { late: true, age });
       else p.lastEventAt = this.now(); // plus rien à montrer, mais le joueur n'est pas AFK
+      if (EVENT_WEIGHTS[kind] && !AGGREGATED.has(kind)) {
+        const name = /( de| par| :)$/.test(LABELS[kind] || '') ? `${LABELS[kind]} ${p.name}` : `${LABELS[kind] || kind} (${p.name})`;
+        this.note({ type: 'log', label: name, age, ignored: late && !KEPT_WHEN_LATE.has(kind) });
+        noted = true;
+      }
     }
-    for (const [kind, n] of Object.entries(fresh)) {
-      if (AGGREGATED.has(kind)) this.addEvent(i, kind, { mult: Math.min(n, 4) });
-      else for (let k = 0; k < Math.min(n, 3); k++) this.addEvent(i, kind);
+    for (const [kind, { n, age }] of Object.entries(fresh)) {
+      if (AGGREGATED.has(kind)) this.addEvent(i, kind, { mult: Math.min(n, 4), age });
+      else for (let k = 0; k < Math.min(n, 3); k++) this.addEvent(i, kind, { age });
     }
+    if (noted) this.emitState();
+  }
+
+  /** Pour la page /logs : joueur par joueur, l'agent est-il là et que reçoit-on ? */
+  logSummary() {
+    const t = this.now();
+    return this.players.map(p => ({
+      name: p.name,
+      connected: t - p.agentSeenAt < AGENT_SEEN_MS,
+      everSeen: p.agentSeenAt > 0,
+      seenAgoSec: p.agentSeenAt ? Math.round((t - p.agentSeenAt) / 1000) : null,
+      lastLabel: p.logs.lastKind ? KIND_NAMES[p.logs.lastKind] || p.logs.lastKind : null,
+      lastAgoSec: p.logs.lastAt ? Math.round((t - p.logs.lastAt) / 1000) : null,
+      lastAge: p.logs.lastAge,
+      counts: p.logs.counts
+    }));
+  }
+
+  /** Ajoute une ligne au journal affiché par /overlay/journal */
+  note(entry) {
+    this.journal.unshift({ t: this.now(), ...entry });
+    this.journal.length = Math.min(this.journal.length, JOURNAL_SIZE);
   }
 
   agentSeen(i) { if (this.players[i]) this.players[i].agentSeenAt = this.now(); }
@@ -129,7 +181,7 @@ export class Director extends EventEmitter {
     // La vie privée passe avant tout, même en mode MANUEL ou plan verrouillé
     if (p.private && this.isShown(i)) {
       const d = this.decide();
-      this.apply({ ...d, reason: `${p.name} en privé → ${d.reason}`, source: this.mode === 'MANUEL' ? 'manual' : 'auto' });
+      this.apply({ ...d, reason: `${p.name} en privé → ${d.reason}`, source: this.mode === 'MANUEL' ? 'manual' : 'auto', cause: 'PRIVÉ' });
     }
     this.emitState();
   }
@@ -191,7 +243,7 @@ export class Director extends EventEmitter {
     if (!s || !validLayout(s.layout, this.N)) return;
     const shown = s.layout.players.slice(0, SLOTS[s.layout.type]);
     if (shown.some(i => this.players[i].private)) return;
-    this.llmSuggestion = { layout: { type: s.layout.type, players: shown }, reason: `IA : ${s.reason || 'suggestion'}`, at: this.now() };
+    this.llmSuggestion = { layout: { type: s.layout.type, players: shown }, reason: `IA : ${s.reason || 'suggestion'}`, cause: 'IA', at: this.now() };
     this.addLog(`Suggestion IA : ${describe(this.llmSuggestion.layout, this.names())} — ${s.reason || ''}`);
   }
 
@@ -392,13 +444,13 @@ export class Director extends EventEmitter {
 
     if (maxI < d.calmThreshold) {
       if (this.hasRoom && afkCount >= Math.ceil(cands.length / 2)) {
-        return { layout: { type: 'ROOM', players: [] }, reason: `Pause : ${afkCount} joueurs inactifs`, special: true };
+        return { layout: { type: 'ROOM', players: [] }, reason: `Pause : ${afkCount} joueurs inactifs`, special: true, cause: 'PAUSE' };
       }
       if (this.hasRoom && t - this.lastRoomAt > d.roomEveryMin * 60000) {
-        return { layout: { type: 'ROOM', players: [] }, reason: 'Plan de coupe pièce', timedSec: d.roomDurationSec, special: true };
+        return { layout: { type: 'ROOM', players: [] }, reason: 'Plan de coupe pièce', timedSec: d.roomDurationSec, special: true, cause: 'PLANNING' };
       }
       if (t - this.lastMosaicAt > d.mosaicEveryMin * 60000 && cands.length >= 4) {
-        return { layout: { type: 'MOSAIC', players: [] }, reason: 'Tour de table mosaïque', timedSec: d.mosaicDurationSec, special: true };
+        return { layout: { type: 'MOSAIC', players: [] }, reason: 'Tour de table mosaïque', timedSec: d.mosaicDurationSec, special: true, cause: 'PLANNING' };
       }
     }
 
@@ -408,26 +460,28 @@ export class Director extends EventEmitter {
         return {
           layout: { type: 'QUAD', players: pick.map(p => p.i) },
           reason: bossGroup >= 4 ? `Pull de boss (${bossGroup} joueurs)` : `${hot.length} joueurs en action`,
-          urgent: urgentOf(pick)
+          urgent: urgentOf(pick),
+          cause: bossGroup >= 4 ? 'LOGS' : causeOf(hot), logAge: logAgeOf(hot)
         };
       }
     }
     if (hot.length >= 2) {
       const [a, b] = hot;
-      return { layout: { type: 'SPLIT', players: [a.i, b.i] }, reason: `Action : ${a.name} et ${b.name}`, urgent: urgentOf([a, b]) };
+      return { layout: { type: 'SPLIT', players: [a.i, b.i] }, reason: `Action : ${a.name} et ${b.name}`, urgent: urgentOf([a, b]), cause: causeOf([a, b]), logAge: logAgeOf([a, b]) };
     }
     if (hot.length === 1) {
       const a = hot[0];
       const second = byPrio.find(p => p !== a && p.interest >= d.calmThreshold);
       const why = `${LABELS[a.lastKind] || 'Action :'} ${a.name}`;
-      if (second) return { layout: { type: 'PIP', players: [a.i, second.i] }, reason: `${why} (+ ${second.name} en PIP)`, urgent: urgentOf([a]) };
-      return { layout: { type: 'FULL', players: [a.i] }, reason: why, urgent: urgentOf([a]) };
+      if (second) return { layout: { type: 'PIP', players: [a.i, second.i] }, reason: `${why} (+ ${second.name} en PIP)`, urgent: urgentOf([a]), cause: causeOf([a]), logAge: logAgeOf([a]) };
+      return { layout: { type: 'FULL', players: [a.i] }, reason: why, urgent: urgentOf([a]), cause: causeOf([a]), logAge: logAgeOf([a]) };
     }
     const top = byPrio[0];
     const debtMin = this.debt(top.i) / 60;
     return {
       layout: { type: 'FULL', players: [top.i] },
-      reason: debtMin > 1 ? `Rattrapage temps d'écran : ${top.name} (${debtMin.toFixed(1)} min de retard)` : `Rotation : ${top.name}`
+      reason: debtMin > 1 ? `Rattrapage temps d'écran : ${top.name} (${debtMin.toFixed(1)} min de retard)` : `Rotation : ${top.name}`,
+      cause: 'ROTATION'
     };
   }
 
@@ -491,7 +545,7 @@ export class Director extends EventEmitter {
     }
   }
 
-  apply({ layout, reason, source = 'auto', timedUntil = 0, timedSec }) {
+  apply({ layout, reason, source = 'auto', timedUntil = 0, timedSec, cause, logAge }) {
     const t = this.now();
     if (timedSec) timedUntil = t + timedSec * 1000;
     if (layout.type === 'MOSAIC') this.lastMosaicAt = t;
@@ -500,6 +554,7 @@ export class Director extends EventEmitter {
     this.current = { layout, since: changed ? t : this.current.since, reason, source, timedUntil };
     if (changed) {
       this.addLog(`${describe(layout, this.names())} — ${reason}`);
+      this.note({ type: 'switch', cause: CAUSE_OF_SOURCE[source] || cause || 'AUTO', label: describe(layout, this.names()), reason, age: logAge ?? null });
       Promise.resolve(this.output.applyLayout(layout)).catch(e => this.addLog(`Erreur PC POV : ${e.message}`));
     }
     this.emitState();
@@ -580,7 +635,8 @@ export class Director extends EventEmitter {
       vote: this.mode === 'CHAT' ? this.voteState() : null,
       spotQueue: this.spotQueue.map(s => ({ by: s.by, label: s.layout ? describe(s.layout, this.names()) : this.players[s.player].name })),
       hasRoom: this.hasRoom,
-      log: this.log.slice(0, 25)
+      log: this.log.slice(0, 25),
+      journal: this.journal
     };
   }
 

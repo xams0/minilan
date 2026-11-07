@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Journal de la régie</title>
+<style>
+  /* Source navigateur OBS en 1920 × 1080, fond transparent : montre pourquoi le plan change, et ce que les logs envoient */
+  html, body { margin: 0; background: transparent; overflow: hidden; font-family: "Segoe UI", system-ui, sans-serif; }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  #box { position: absolute; left: 24px; top: 24px; width: 700px; padding: 14px 16px 12px; background: #05070de0; color: #e8ecf5; font-size: 19px; line-height: 1.25; }
+  #box::before, #box::after { content: ""; position: absolute; width: 20px; height: 20px; }
+  #box::before { left: 0; top: 0; border-left: 3px solid #35e6ff; border-top: 3px solid #35e6ff; }
+  #box::after { right: 0; bottom: 0; border-right: 3px solid #8b6bff; border-bottom: 3px solid #8b6bff; }
+  h1 { margin: 0 0 8px; font-size: 14px; font-weight: 700; letter-spacing: .14em; color: #8c98b8; }
+  .l { display: grid; grid-template-columns: 74px 124px 1fr; gap: 8px; align-items: baseline; padding: 3px 0; }
+  .t { color: #8c98b8; font-size: 16px; font-variant-numeric: tabular-nums; }
+  .c { font-size: 14px; font-weight: 800; letter-spacing: .04em; text-align: center; padding: 2px 4px; border-radius: 3px; background: #2c3c60; color: #e8ecf5; }
+  .c.LOGS { background: #35e6ff; color: #05070d; }
+  .c.MANUEL, .c.PROJECTEUR, .c.CHAT, .c.IA { background: #8b6bff; color: #fff; }
+  .c.MICRO { background: #ffb648; color: #05070d; }
+  .c.recu { background: transparent; color: #35e6ff; border: 1px solid #35e6ff; }
+  .c.ignore { background: transparent; color: #8c98b8; border: 1px solid #545f80; }
+  .x { font-weight: 600; }
+  .x small { display: block; font-size: 15px; font-weight: 400; color: #8c98b8; }
+  .l.log .x { font-weight: 400; color: #c6cfe2; }
+  /* /journal : dock OBS ou navigateur. Suit la largeur de la fenêtre, jamais à l'antenne. */
+  body.dock { background: #05070d; overflow: auto; }
+  body.dock #stage { position: static; width: auto; height: auto; transform: none !important; }
+  body.dock #box { position: relative; left: auto; top: auto; width: auto; min-height: 100vh; box-sizing: border-box; padding: 12px; background: #0b111e; font-size: 14px; }
+  body.dock h1 { font-size: 11px; }
+  body.dock .l { grid-template-columns: 58px 84px minmax(0, 1fr); gap: 6px; padding: 4px 0; }
+  body.dock .t { font-size: 12px; }
+  body.dock .c { font-size: 10px; padding: 2px; }
+  body.dock .x small { font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="box"><h1>RÉGIE : POURQUOI ÇA CHANGE</h1><div id="list"></div></div></div>
+<script>
+const DOCK = !location.pathname.startsWith('/overlay');
+if (DOCK) document.body.classList.add('dock');
+const SHOWN = DOCK ? 12 : 7;
+const list = document.getElementById('list');
+const stage = document.getElementById('stage');
+const el = (cls, text) => { const e = document.createElement('div'); e.className = cls; if (text != null) e.textContent = text; return e; };
+const clock = t => new Date(t).toLocaleTimeString('fr-FR');
+const delay = age => (age > 0 ? `, écrit par WoW avec ${age >= 60 ? '60 s ou plus' : age + ' s'} de retard` : '');
+
+function line(e) {
+  const row = el(`l ${e.type}`);
+  row.append(el('t', clock(e.t)));
+  const x = el('x');
+  if (e.type === 'switch') {
+    row.append(el(`c ${e.cause}`, e.cause));
+    x.textContent = e.label;
+    const why = document.createElement('small');
+    why.textContent = e.reason + (e.cause === 'LOGS' ? delay(e.age) : '');
+    x.append(why);
+  } else {
+    row.append(el(`c ${e.ignored ? 'ignore' : 'recu'}`, e.ignored ? 'TROP VIEUX' : 'LOG REÇU'));
+    x.textContent = e.label + delay(e.age);
+  }
+  row.append(x);
+  return row;
+}
+function show(entries) { list.replaceChildren(...entries.slice(0, SHOWN).map(line)); }
+
+function fit() { stage.style.transform = `scale(${innerWidth / 1920})`; }
+if (!DOCK) {
+  addEventListener('resize', fit);
+  fit();
+}
+
+function connect() {
+  const ws = new WebSocket(`ws://${location.host}/ws?role=journal`);
+  ws.onmessage = e => { const m = JSON.parse(e.data); if (m.type === 'journal') show(m.list); };
+  ws.onclose = () => setTimeout(connect, 1500);
+}
+connect();
+</script>
+</body>
+</html>

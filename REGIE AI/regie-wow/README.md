@@ -86,6 +86,11 @@ Un seul fichier qui contient Node et la régie : double-clic, et elle démarre. 
 - **Contrôles :** taille, empreinte SHA-256 fournie par GitHub, version annoncée, et démarrage de test du nouvel exe avant de remplacer l'ancien. Les exe ne sont pas signés : la sécurité repose sur le compte GitHub qui publie.
 - Un exe compilé sans `-Version` (0.0.0) ne se met jamais à jour.
 
+### Vérifier que les logs arrivent et font changer le plan
+
+- **`http://IP_DE_LA_REGIE:PORT/logs`** (bouton **Logs** de `RegieIA.exe`) : joueur par joueur, l'agent est-il connecté, quel a été son dernier événement, avec quel retard, et combien en ont été reçus depuis le démarrage de la régie.
+- **`http://IP_DE_LA_REGIE:PORT/journal`** : à ajouter comme dock dans OBS (*Docks > Docks de navigateur personnalisés*), jamais à l'antenne. Il suit la largeur du dock. `/overlay/journal` affiche le même contenu dans un encadré transparent en 1920 × 1080, pour une source navigateur à l'image. Chaque changement de plan y porte sa cause : `LOGS`, `ROTATION`, `MICRO`, `PLANNING`, `PAUSE`, `MANUEL`, `CHAT`, `PROJECTEUR`, `IA`, `PRIVÉ`. `LOG REÇU` montre un événement arrivé, même s'il n'a pas changé le plan, et `TROP VIEUX` un événement écarté à cause de son retard.
+
 ### Stream Deck : plugin et profil 8 × 5
 
 Double-clique sur `streamdeck\dist\RegieIA.streamDeckPlugin` (créé par `streamdeck\build.ps1`, et joint aux Releases `regie-v*`). Il installe le plugin **Régie IA** et propose le profil **RegieIA** pour Stream Deck Mobile, en 8 × 5. Si le profil n'apparaît pas, double-clique sur `RegieIA.streamDeckProfile`.
@@ -253,6 +258,8 @@ Il est aussi multiplié par la place laissée au jeu par les casters : 0,9 en PI
 | `src/llm.js` | Couche Claude optionnelle |
 | `agent/exe/` | Agent joueur avec interface (`AgentRegie.exe`). `CombatLog.cs` et `LogFinder.cs` doivent garder la même logique que `agent.mjs`. `Updater.cs` sert aussi à `RegieIA.exe` |
 | `launcher/` | `RegieIA.exe` : lance la régie sans npm, Node inclus |
+| `public/logs.html` | Logs reçus par joueur (`/logs`) |
+| `public/overlay-journal.html` | Pourquoi le plan change : dock OBS (`/journal`) ou à l'image (`/overlay/journal`) |
 | `public/deck.html` | Page tactile 8 × 5 (`/deck`) |
 | `src/streamdeck.js` | Touches du Stream Deck : ce qu'affiche chaque position, ce que fait chaque appui |
 | `streamdeck/` | Plugin Stream Deck et génération du profil |
