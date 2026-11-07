@@ -8,7 +8,7 @@
  */
 (function () {
     'use strict';
-    var ADRESSE_DEFAUT = '127.0.0.1:8081', TAILLE = 144;
+    var ADRESSE_DEFAUT = '192.168.1.41:8080', TAILLE = 144;
     var sd = null, regie = null, adresse = ADRESSE_DEFAUT;
     var touches = {};      // context → { col, row, signature }
     var recues = {};       // "col,row" → ce que la régie demande d'afficher

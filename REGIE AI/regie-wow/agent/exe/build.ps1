@@ -1,10 +1,10 @@
 ﻿# Compile AgentRegie.exe avec le compilateur fourni dans Windows : rien à installer.
 # L'exe obtenu n'a besoin que de .NET Framework 4.8, déjà présent sur Windows 10 et 11 à jour.
-#   .\build.ps1                                       adresse de régie par défaut : celle du test
-#   .\build.ps1 -Regie http://192.168.1.20:8081       adresse pré-remplie pour une autre installation
+#   .\build.ps1                                       adresse de régie par défaut : le PC Stream
+#   .\build.ps1 -Regie http://192.168.1.20:8080       adresse pré-remplie pour une autre installation
 #   .\build.ps1 -Version 1.2.0                        version de l'exe. Sans elle (0.0.0), il ne se met jamais à jour tout seul
 param(
-    [string]$Regie = 'http://192.168.1.31:8081',
+    [string]$Regie = 'http://192.168.1.41:8080',
     [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '0.0.0'
 )
 

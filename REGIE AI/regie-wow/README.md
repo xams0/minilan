@@ -70,7 +70,8 @@ La régie gère de 1 à 9 joueurs. À 9, la mosaïque remplit toute la grille 3�
 Un seul fichier qui contient Node et la régie : double-clic, et elle démarre. Il remplace `npm start`.
 
 - Mets-le dans un dossier à lui. `config.json` et `data/` restent à côté de l'exe et ne sont jamais touchés par une mise à jour. Le programme est extrait dans `app/`.
-- Pour reprendre une installation existante, copie `config.json` et `data/` à côté de l'exe.
+- Sans `config.json`, elle démarre avec la config de base de l'installation Lanppart (`config.example.json`), prévue pour tourner sur le PC Stream. `/reglages` crée ensuite le fichier.
+- Pour reprendre une installation existante, copie `config.json` et `data/` à côté de l'exe : ce fichier passe avant la config de base.
 - La fenêtre donne l'accès au panneau et aux réglages, l'adresse à taper sur le Steam Deck, le bouton **Préparer OBS** (l'équivalent de `npm run setup-obs`) et le journal. La fermer arrête la régie, après confirmation.
 - Pour le compiler : `launcher\build.ps1 -Version 1.2.0`, avec Node installé sur le PC qui compile.
 
@@ -91,7 +92,7 @@ Double-clique sur `streamdeck\dist\RegieIA.streamDeckPlugin` (créé par `stream
 
 Le plugin ne contient ni touche, ni lien, ni commande. `src/streamdeck.js`, dans la régie, décide de ce qu'affiche chaque position et traite les appuis. Ajouter un joueur ou changer une touche ne demande donc qu'une mise à jour de `RegieIA.exe`.
 
-- **Adresse :** `127.0.0.1:8081` par défaut. Si la régie tourne sur un autre PC ou un autre port, clique sur une touche dans le logiciel Stream Deck et change l'adresse dans l'inspecteur : elle vaut pour toutes les touches.
+- **Adresse :** `192.168.1.41:8080` par défaut, le PC Stream. Si la régie tourne ailleurs ou sur un autre port, clique sur une touche dans le logiciel Stream Deck et change l'adresse dans l'inspecteur : elle vaut pour toutes les touches.
 - **POV 1 à 9, à droite :** appui = plein écran, avec l'image du POV dans la touche.
 - **PIP, Split, Quad :** appuie sur le plan, puis sur les joueurs. Pour un PIP, le premier joueur est le plan principal. Un second appui sur le plan annule.
 - **Caméras :** Pièce (la caméra de `pc2.roomCam`), et la ligne Casters pour la caméra des casters (Auto, Off, PIP, Split, Plein écran).

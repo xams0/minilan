@@ -17,7 +17,7 @@
 <body>
     <div class="ligne">
         <label for="adresse">Adresse de la régie</label>
-        <input id="adresse" type="text" placeholder="127.0.0.1:8081">
+        <input id="adresse" type="text" placeholder="192.168.1.41:8080">
     </div>
     <div class="aide">Commune à toutes les touches. La fenêtre de RegieIA.exe indique son port. Les touches viennent de la régie : rien d'autre à régler ici.</div>
     <div class="test" id="test"></div>
@@ -25,7 +25,7 @@
         var ws, uuid, glob = {};
         var $ = function (id) { return document.getElementById(id); };
         function envoyer(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
-        function nettoyer() { return ($('adresse').value || '127.0.0.1:8081').trim().replace(/^https?:\/\//i, '').replace(/\/+$/, ''); }
+        function nettoyer() { return ($('adresse').value || '192.168.1.41:8080').trim().replace(/^https?:\/\//i, '').replace(/\/+$/, ''); }
         function tester() {
             var a = nettoyer(), s, fini = false;
             function resultat(ok) {
