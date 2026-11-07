@@ -10,7 +10,8 @@ import { fileURLToPath } from 'node:url';
 import { OBSWebSocket } from 'obs-websocket-js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const cfgPath = fs.existsSync(path.join(ROOT, 'config.json')) ? path.join(ROOT, 'config.json') : path.join(ROOT, 'config.example.json');
+const HOME = process.env.REGIE_HOME ? path.resolve(process.env.REGIE_HOME) : ROOT; // voir src/server.js
+const cfgPath = fs.existsSync(path.join(HOME, 'config.json')) ? path.join(HOME, 'config.json') : path.join(ROOT, 'config.example.json');
 const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
 const i = process.argv.indexOf('--regie');
 const regie = (i > 0 ? process.argv[i + 1] : `http://localhost:${cfg.port}`).replace(/\/$/, '');

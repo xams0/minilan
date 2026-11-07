@@ -35,6 +35,15 @@ function splitCsv(s) {
   return out;
 }
 
+/** Surplus de dégâts d'un coup : positif si ce coup a tué sa cible. Les lignes de sorts ont un champ de plus en fin de ligne. */
+const overkill = (ev, f) => Number(f[f.length - (/^(SPELL|RANGE)_/.test(ev) ? 9 : 8)]) || 0;
+
+// WoW écrit le log à la fin du combat. Une mort finit le combat : le coup mortel est écrit aussitôt,
+// mais le UNIT_DIED qui le suit de 2 ms n'arrive qu'à l'écriture suivante, plusieurs minutes après (mesuré : 198 s).
+// La mort part donc sur le coup mortel, et ce UNIT_DIED est reconnu à son heure pour ne pas la compter deux fois.
+const SAME_DEATH_MS = 5000;
+let lastFatalAt = null;
+
 /** Transforme une ligne en type d'événement pour la régie (ou null) */
 export function classify(line) {
   const sep = line.indexOf('  ');
@@ -44,7 +53,11 @@ export function classify(line) {
   if (ev === 'ENCOUNTER_START') return 'boss_start';
   if (ev === 'ENCOUNTER_END') return f[5] === '1' ? 'boss_kill' : 'boss_wipe';
   const src = parseInt(f[3], 16) || 0, dst = parseInt(f[7], 16) || 0;
-  if (ev === 'UNIT_DIED' && meExact(dst)) return 'death';
+  if (ev.endsWith('_DAMAGE') && meExact(dst) && overkill(ev, f) > 0) {
+    lastFatalAt = Date.parse(line.slice(0, sep));
+    return 'death';
+  }
+  if (ev === 'UNIT_DIED' && meExact(dst)) return Math.abs(Date.parse(line.slice(0, sep)) - lastFatalAt) < SAME_DEATH_MS ? null : 'death';
   if (ev === 'PARTY_KILL' && me(src)) return 'kill';
   if (ev === 'SPELL_INTERRUPT' && me(src)) return 'interrupt';
   if (ev === 'SPELL_RESURRECT' && (me(src) || meExact(dst))) return 'res';
@@ -88,6 +101,19 @@ function candidateLogDirs() {
   return dirs;
 }
 
+/**
+ * Date écrite dans le nom : WoWCombatLog-110726_080848.txt = 7 novembre 2026 à 08:08:48, heure locale (MMJJAA_HHMMSS).
+ * Elle est décodée car un tri alphabétique placerait 123126 après 010127.
+ * Même logique que GameFinder.cs : toute évolution doit être faite des deux côtés.
+ */
+function dateInName(name) {
+  const m = /^WoWCombatLog-(\d{2})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})\.txt$/i.exec(name);
+  if (!m) return null;
+  const [mo, d, y, h, mi, s] = m.slice(1).map(Number);
+  const t = new Date(2000 + y, mo - 1, d, h, mi, s);
+  return t.getMonth() === mo - 1 && t.getDate() === d ? t.getTime() : null;
+}
+
 function newestLog() {
   let best = null;
   for (const dir of candidateLogDirs()) {
@@ -95,13 +121,16 @@ function newestLog() {
       for (const f of fs.readdirSync(dir)) {
         if (!/^WoWCombatLog.*\.txt$/i.test(f)) continue;
         const p = path.join(dir, f), st = fs.statSync(p);
-        if (!best || st.mtimeMs > best.mtime) best = { p, mtime: st.mtimeMs };
+        // Le nom fait foi : ré-enregistrer un ancien log change sa date d'écriture, pas son nom
+        const time = dateInName(f) ?? Math.max(st.mtimeMs, st.birthtimeMs);
+        if (!best || time > best.time) best = { p, time };
       }
     } catch { /* dossier absent */ }
   }
   return best?.p || null;
 }
 
+const startedAt = Date.now();
 let file = null, pos = 0, rest = '';
 const pending = {};
 let lastSend = 0;
@@ -109,11 +138,19 @@ let lastSend = 0;
 function poll() {
   const latest = newestLog();
   if (latest && latest !== file) {
+    try { readNew(); } catch { /* ancien log disparu */ } // sa fin, écrite depuis le dernier tour
+    const st = fs.statSync(latest);
     file = latest;
-    pos = fs.statSync(file).size; // on démarre à la fin : pas de rejeu du passé
+    // Log déjà là au lancement : on part de la fin pour ne pas rejouer le passé.
+    // Log créé depuis (nouveau /combatlog) : tout son contenu est récent.
+    pos = st.birthtimeMs >= startedAt ? 0 : st.size;
     rest = '';
     console.log(`Lecture de ${file}`);
   }
+  readNew();
+}
+
+function readNew() {
   if (!file) return;
   let st;
   try { st = fs.statSync(file); } catch { file = null; return; }
@@ -129,12 +166,20 @@ function poll() {
   rest = lines.pop();
   for (const l of lines) {
     const k = classify(l);
-    if (k) pending[k] = (pending[k] || 0) + 1;
+    if (!k) continue;
+    const key = `${k}|${lineAge(l)}`;
+    pending[key] = (pending[key] || 0) + 1;
   }
 }
 
+/** Ancienneté de la ligne en secondes, pour que la régie écarte ce que WoW écrit en retard. Bornée pour limiter la taille des envois. */
+function lineAge(line) {
+  const age = Math.round((Date.now() - Date.parse(line.slice(0, line.indexOf('  ')))) / 1000);
+  return Math.min(60, Math.max(0, age || 0));
+}
+
 async function send() {
-  const events = Object.entries(pending).map(([kind, n]) => ({ kind, n }));
+  const events = Object.entries(pending).map(([key, n]) => { const [kind, age] = key.split('|'); return { kind, n, age: Number(age) }; });
   if (!events.length && Date.now() - lastSend < 5000) return;
   for (const k of Object.keys(pending)) delete pending[k];
   lastSend = Date.now();

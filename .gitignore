@@ -1,2 +1,4 @@
 node_modules/
 /AddonWoW/
+# Les exe sont publiés en Release par GitHub Actions
+dist/

@@ -13,11 +13,13 @@ import { LlmDirector } from './llm.js';
 import { createSettingsApi, withDefaults } from './settings.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DATA = path.join(ROOT, 'data');
+// Avec RegieIA.exe, le programme est remplacé à chaque mise à jour : config.json et data/ restent à côté de l'exe
+const HOME = process.env.REGIE_HOME ? path.resolve(process.env.REGIE_HOME) : ROOT;
+const DATA = path.join(HOME, 'data');
 const PUBLIC = path.join(ROOT, 'public');
 const noObsFlag = process.argv.includes('--no-obs');
 
-let cfgFile = path.join(ROOT, 'config.json');
+let cfgFile = path.join(HOME, 'config.json');
 if (!fs.existsSync(cfgFile)) {
   console.warn('config.json absent : utilisation de config.example.json (règle-la sur /reglages)');
   cfgFile = path.join(ROOT, 'config.example.json');
@@ -104,12 +106,13 @@ function handleCommand(client, m) {
 }
 
 // ---- HTTP ----
-const PAGES = { '/': 'panel.html', '/panel': 'panel.html', '/dock': 'dock.html', '/reglages': 'reglages.html', '/joueur': 'joueur.html', '/overlay/tags': 'overlay-tags.html', '/overlay/stream': 'overlay-stream.html' };
+const PAGES = { '/': 'panel.html', '/panel': 'panel.html', '/dock': 'dock.html', '/deck': 'deck.html', '/reglages': 'reglages.html', '/joueur': 'joueur.html', '/overlay/tags': 'overlay-tags.html', '/overlay/stream': 'overlay-stream.html' };
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml' };
 
 const RESTART_CODE = 75; // compris par src/run.js
 const settingsApi = createSettingsApi({
   root: ROOT,
+  home: HOME,
   running: config,
   runtime: () => ({ port: config.port, obsActive: !noObs, noObsFlag, canRestart: !!process.env.REGIE_SUPERVISED, status: director.status }),
   restart: process.env.REGIE_SUPERVISED ? () => { director.saveState(); process.exit(RESTART_CODE); } : null
@@ -125,11 +128,7 @@ const server = http.createServer((req, res) => {
       try {
         const { player, events } = JSON.parse(body);
         director.agentSeen(player);
-        for (const { kind, n } of events || []) {
-          // Les événements fréquents (dégâts, soins) sont agrégés ; les rares comptent chacun
-          if (['dmg_out', 'dmg_in', 'heal', 'cast'].includes(kind)) director.addEvent(player, kind, { mult: Math.min(n, 4) });
-          else for (let k = 0; k < Math.min(n, 3); k++) director.addEvent(player, kind);
-        }
+        director.addAgentEvents(player, events || []);
         res.writeHead(204).end();
       } catch { res.writeHead(400).end(); }
     });
@@ -192,10 +191,17 @@ server.listen(config.port, '0.0.0.0', () => {
   console.log(`Régie prête : http://localhost:${config.port}  (panneau)`);
   console.log(`  Réglages (depuis ce PC uniquement) : http://127.0.0.1:${config.port}/reglages`);
   console.log(`  Overlays : /overlay/tags?slot=A, /overlay/tags?slot=B (PC POV), /overlay/stream (PC Stream)`);
-  console.log(`  Dock OBS (PC Stream) : /dock   ·   Stream Deck : /api/cmd?cmd=mode&mode=CHAT`);
+  console.log(`  Dock OBS (PC Stream) : /dock   ·   Steam Deck : /deck   ·   Stream Deck : /api/cmd?cmd=mode&mode=CHAT`);
   console.log(`  Page joueur : /joueur?p=1 … /joueur?p=${config.players.length}`);
 });
 
 const bye = () => { director.saveState(); process.exit(0); };
 process.on('SIGINT', bye);
 process.on('SIGTERM', bye);
+// RegieIA.exe demande l'arrêt en fermant cette entrée (sous Windows, un signal couperait net sans sauvegarder).
+// Elle se ferme aussi si l'exe disparaît : le serveur ne reste jamais orphelin.
+if (process.env.REGIE_LAUNCHER) {
+  process.stdin.on('end', bye);
+  process.stdin.on('close', bye);
+  process.stdin.resume();
+}

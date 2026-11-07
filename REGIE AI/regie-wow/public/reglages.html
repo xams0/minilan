@@ -156,6 +156,7 @@ const SECTIONS = [
     { p: 'director.fairness', l: 'Équité du temps d\'écran (0 à 1)', t: 'num', min: 0, max: 1, step: 0.05 },
     { p: 'director.debtScaleSec', l: 'Échelle du retard d\'écran (s)', t: 'num', min: 1 },
     { p: 'director.afkAfterSec', l: 'AFK après (s)', t: 'num', min: 1 },
+    { p: 'director.maxEventAgeSec', l: 'Événement du log trop ancien après (s)', t: 'num', min: 0, h: 'WoW écrit le log en fin de combat. Au-delà, un événement ne provoque plus de changement de plan immédiat.' },
     { p: 'director.mosaicEveryMin', l: 'Mosaïque toutes les (min)', t: 'num', min: 0 },
     { p: 'director.mosaicDurationSec', l: 'Durée de la mosaïque (s)', t: 'num', min: 1 },
     { p: 'director.roomEveryMin', l: 'Plan pièce toutes les (min)', t: 'num', min: 0 },
@@ -249,7 +250,7 @@ function layoutsBlock() {
   const names = { OFF: 'Sans casters', PIP: 'Casters en PIP', SPLIT: 'Casters en split', FULL: 'Casters en plein écran' };
   const rect = (path, title) => el('div', { class: 'group' }, el('span', { text: title }), el('div', { class: 'rect' },
     ...['X', 'Y', 'Largeur', 'Hauteur'].map((lbl, i) => el('label', {}, lbl, makeInput({ p: `${path}.${i}`, t: 'num' })))));
-  const wrap = el('div', {}, el('h3', { text: 'Disposition, en pixels' }));
+  const wrap = el('div', {}, el('h3', { text: 'Disposition, en pixels' }), el('p', { class: 'intro', text: 'Si tu déplaces le PIP des casters dans OBS, la régie retient cette position. Modifier ici « Casters en PIP : caméra » la remplace.' }));
   const grid = el('div', { class: 'layouts' });
   for (const [m, name] of Object.entries(names)) {
     grid.append(rect(`pc2.layouts.${m}.game`, `${name} : jeu`));

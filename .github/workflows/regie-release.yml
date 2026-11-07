@@ -1,0 +1,37 @@
+# Pousser un tag regie-vX.Y.Z compile RegieIA.exe (Node et la régie inclus) et le publie en Release.
+# L'exe installé la détecte au lancement et se met à jour (voir agent/exe/Updater.cs).
+name: Release RegieIA
+
+on:
+  push:
+    tags:
+      - 'regie-v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Installer les dépendances
+        working-directory: REGIE AI/regie-wow
+        run: npm ci --omit=dev
+
+      - name: Compiler
+        shell: powershell
+        run: |
+          $version = $env:GITHUB_REF_NAME.Substring('regie-v'.Length)
+          & 'REGIE AI/regie-wow/launcher/build.ps1' -Version $version
+
+      - name: Publier
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create $env:GITHUB_REF_NAME 'REGIE AI/regie-wow/launcher/dist/RegieIA.exe' --title "RegieIA $env:GITHUB_REF_NAME" --generate-notes

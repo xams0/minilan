@@ -182,13 +182,14 @@ export async function testObs(url, password) {
 
 /**
  * Renvoie un gestionnaire de routes.
- * @param root     dossier du projet (où se trouve config.json)
+ * @param root     dossier du projet (où se trouve config.example.json)
+ * @param home     dossier de config.json : celui du projet, ou celui de RegieIA.exe
  * @param running  config chargée au démarrage (pour savoir si un redémarrage est nécessaire)
  * @param runtime  () => état du processus affiché dans la page
  * @param restart  () => redémarre, ou null si la régie n'a pas été lancée par `npm start`
  */
-export function createSettingsApi({ root, running, runtime, restart }) {
-  const file = path.join(root, 'config.json');
+export function createSettingsApi({ root, home = root, running, runtime, restart }) {
+  const file = path.join(home, 'config.json');
   const exampleFile = path.join(root, 'config.example.json');
   const readExample = () => JSON.parse(fs.readFileSync(exampleFile, 'utf8'));
   const readDisk = example => withDefaults(fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : example, example);

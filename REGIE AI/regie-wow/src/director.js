@@ -13,6 +13,11 @@ const EVENT_WEIGHTS = {
   shout: 1.2
 };
 const URGENT = new Set(['death', 'boss_start', 'boss_kill', 'boss_wipe', 'level']);
+// WoW écrit le log en fin de combat : ces événements restent intéressants en retard, sans justifier une coupe urgente.
+// Les autres décrivent une action déjà finie, y compris un pull de boss.
+const KEPT_WHEN_LATE = new Set(['death', 'kill', 'boss_kill', 'boss_wipe']);
+// Fréquents : agrégés. Les rares comptent chacun.
+const AGGREGATED = new Set(['dmg_out', 'dmg_in', 'heal', 'cast']);
 const LABELS = {
   death: 'Mort de', boss_start: 'Pull de boss', boss_kill: 'Boss tombé', boss_wipe: 'Wipe',
   level: 'Level up de', kill: 'Kill de', dmg_in: 'En danger :', dmg_out: 'Combat de', shout: 'Ça crie chez'
@@ -75,11 +80,27 @@ export class Director extends EventEmitter {
     p.interest = Math.min(INTEREST_CAP, p.interest + w * Math.max(0.05, 1 - p.interest / INTEREST_CAP));
     const prevAt = p.lastEventAt;
     p.lastEventAt = t;
-    if (URGENT.has(kind)) p.urgentAt = t;
+    if (URGENT.has(kind) && !extra.late) p.urgentAt = t;
     // Le "dernier type" sert à expliquer la décision : on garde le plus marquant des 5 dernières secondes
     if (URGENT.has(kind) || t - prevAt > 5000 || EVENT_WEIGHTS[kind] >= (EVENT_WEIGHTS[p.lastKind] ?? 0)) p.lastKind = kind;
     p.events.push({ t, kind });
     if (p.events.length > 400) p.events.splice(0, p.events.length - 400);
+  }
+
+  /** Événements d'un agent. age = ancienneté de la ligne du log en secondes, absente chez un agent plus ancien. */
+  addAgentEvents(i, events = []) {
+    const p = this.players[i];
+    if (!p) return;
+    const fresh = {};
+    for (const { kind, n, age = 0 } of events) {
+      if (age <= this.d.maxEventAgeSec) fresh[kind] = (fresh[kind] || 0) + n;
+      else if (KEPT_WHEN_LATE.has(kind)) for (let k = 0; k < Math.min(n, 3); k++) this.addEvent(i, kind, { late: true });
+      else p.lastEventAt = this.now(); // plus rien à montrer, mais le joueur n'est pas AFK
+    }
+    for (const [kind, n] of Object.entries(fresh)) {
+      if (AGGREGATED.has(kind)) this.addEvent(i, kind, { mult: Math.min(n, 4) });
+      else for (let k = 0; k < Math.min(n, 3); k++) this.addEvent(i, kind);
+    }
   }
 
   agentSeen(i) { if (this.players[i]) this.players[i].agentSeenAt = this.now(); }

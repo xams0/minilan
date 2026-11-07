@@ -43,6 +43,8 @@ const transform = ([x, y, w, h]) => ({
   cropLeft: 0, cropRight: 0, cropTop: 0, cropBottom: 0
 });
 
+const sameRect = (a, b, tolerance = 2) => !!a && !!b && a.length === 4 && b.length === 4 && a.every((v, i) => Math.abs(v - b[i]) <= tolerance);
+
 /** Connexion OBS avec reconnexion automatique */
 class ObsLink {
   constructor(name, url, password, log, { meters = false } = {}) {
@@ -203,6 +205,21 @@ export class Pc2 {
     this.cfg = cfg; this.c = cfg.pc2; this.dir = director;
     this.onThumb = onThumb; this.onRoomThumb = onRoomThumb;
     this.refPath = path.join(dataDir, 'caster-ref.json');
+    this.pipPath = path.join(dataDir, 'caster-pip.json');
+    this.pipRect = null;       // position du PIP choisie à la main dans OBS (sinon : celle des réglages)
+    this.camWritten = null;    // dernière position de la caméra écrite par la régie
+    this.renderedMode = null;  // mode casters du dernier affichage terminé
+    this.pipSaved = false;     // caster-pip.json correspond à la config actuelle
+    try {
+      const saved = JSON.parse(fs.readFileSync(this.pipPath, 'utf8'));
+      if (sameRect(saved.configCam, this.c.layouts.PIP?.cam, 0)) {
+        this.pipRect = saved.rect;
+        this.pipSaved = true;
+      } else {
+        // Une nouvelle position saisie sur /reglages remplace l'ancienne, qu'OBS garde encore : à ne pas reprendre
+        this.camWritten = saved.rect || saved.configCam;
+      }
+    } catch { /* première utilisation : la position actuelle dans OBS sera retenue */ }
     this.link = new ObsLink('PC Stream', this.c.url, this.c.password, m => director.addLog(m), { meters: true });
     this.link.onStatus = v => { director.status.pc2 = v; director.emitState(); };
     this.link.onConnect = () => this.init();
@@ -268,6 +285,7 @@ export class Pc2 {
   targets() {
     const L = this.c.layouts[this.casterMode] || this.c.layouts.OFF;
     let game = L.game, cam = L.cam, room = null;
+    if (this.casterMode === 'PIP' && this.pipRect) cam = this.pipRect;
     if (this.layoutType === 'ROOM' && this.ids.room != null) {
       room = game;      // la pièce prend la place du jeu (plein écran, ou vignette si casters en FULL)
       game = null;
@@ -278,13 +296,55 @@ export class Pc2 {
     return { game, cam, room };
   }
 
+  /** Une position différente de la dernière écrite par la régie, c'est un déplacement fait à la main dans OBS */
+  async syncPipFromObs() {
+    const id = this.ids.cam;
+    if (id == null || (this.renderedMode && !['PIP', 'OFF'].includes(this.renderedMode))) return;
+    let t;
+    try {
+      ({ sceneItemTransform: t } = await this.link.call('GetSceneItemTransform', { sceneName: this.c.scene, sceneItemId: id }));
+    } catch { return; } // élément indisponible : on garde la position connue
+    if (t.boundsType === 'OBS_BOUNDS_NONE' || !(t.boundsWidth > 1) || !(t.boundsHeight > 1)) return; // pas encore placée par la régie
+    const rect = [t.positionX, t.positionY, t.boundsWidth, t.boundsHeight].map(Math.round);
+    if (sameRect(rect, this.camWritten)) return;
+    const L = this.c.layouts;
+    if (sameRect(rect, L.SPLIT?.cam) || sameRect(rect, L.FULL?.cam)) return; // laissée là par un autre mode avant un redémarrage
+    if (this.rects.cam) this.rects.cam = rect; // déjà à l'image : pas de saut vers l'ancienne position
+    this.camWritten = rect;
+    this.setPipRect(sameRect(rect, L.PIP?.cam) ? null : rect);
+  }
+
+  setPipRect(rect) {
+    if (rect === this.pipRect || sameRect(rect, this.pipRect, 0)) return;
+    this.pipRect = rect;
+    this.savePip();
+    this.dir.addLog(rect ? `PIP casters : position retenue depuis OBS (${rect[0]}, ${rect[1]}, ${rect[2]}×${rect[3]})` : 'PIP casters : retour à la position des réglages');
+  }
+
+  /** Garde aussi la position des réglages, pour reconnaître plus tard qu'elle a changé sur /reglages */
+  savePip() {
+    try {
+      fs.mkdirSync(path.dirname(this.pipPath), { recursive: true });
+      fs.writeFileSync(this.pipPath, JSON.stringify({ rect: this.pipRect, configCam: this.c.layouts.PIP?.cam }));
+      this.pipSaved = true;
+    } catch { /* disque indisponible : la position reste retenue jusqu'au redémarrage */ }
+  }
+
   async render({ instant = false } = {}) {
     if (!this.link.connected) return;
     const token = ++this.tweenToken;
     const scene = this.c.scene;
+    await this.syncPipFromObs();
+    if (!this.pipSaved) this.savePip();
+    if (token !== this.tweenToken) return; // un changement plus récent a pris la main
+    const mode = this.casterMode;
     const targets = this.targets();
     const keys = ['game', 'cam', 'room'].filter(k => this.ids[k] != null);
     const req = (k, type, data) => ({ requestType: type, requestData: { sceneName: scene, sceneItemId: this.ids[k], ...data } });
+    const place = (k, rect) => {
+      if (k === 'cam') this.camWritten = rect;
+      return req(k, 'SetSceneItemTransform', { sceneItemTransform: transform(rect) });
+    };
 
     if (this.c.muteMicsWhenAbsent && this.c.casterMics?.length) {
       await this.link.batch(this.c.casterMics.map(m => ({ requestType: 'SetInputMute', requestData: { inputName: m, inputMuted: this.casterMode === 'OFF' } })));
@@ -296,7 +356,7 @@ export class Pc2 {
     const show = [];
     for (const k of keys) {
       if (targets[k] && !this.rects[k]) {
-        show.push(req(k, 'SetSceneItemTransform', { sceneItemTransform: transform(targets[k]) }));
+        show.push(place(k, targets[k]));
         show.push(req(k, 'SetSceneItemEnabled', { sceneItemEnabled: true }));
       }
     }
@@ -308,14 +368,13 @@ export class Pc2 {
     for (let s = 1; s <= steps; s++) {
       if (token !== this.tweenToken) return; // une autre animation a pris la main
       const t = s / steps, e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-      await this.link.batch(moving.map(k => req(k, 'SetSceneItemTransform', {
-        sceneItemTransform: transform(from[k].map((v, i) => v + (targets[k][i] - v) * e))
-      })));
+      await this.link.batch(moving.map(k => place(k, from[k].map((v, i) => v + (targets[k][i] - v) * e))));
       if (s < steps) await sleep(33);
     }
 
     await this.link.batch(keys.filter(k => !targets[k]).map(k => req(k, 'SetSceneItemEnabled', { sceneItemEnabled: false })));
     this.rects = { ...targets };
+    this.renderedMode = mode;
   }
 
   /** Du bas vers le haut : jeu, pièce, casters — sauf casters en FULL où les vignettes passent devant */

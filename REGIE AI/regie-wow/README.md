@@ -65,6 +65,39 @@ La régie gère de 1 à 9 joueurs. À 9, la mosaïque remplit toute la grille 3�
 - Mets la **même latence SRT** sur les 8 flux (par exemple `?latency=200000`, en microsecondes), sinon les POV seront décalées entre elles dans les splits et la mosaïque.
 - Le script de setup décoche « Fermer le fichier quand inactif » et « Redémarrer à l'activation ». Vérifie que c'est bien fait si tu crées des sources après coup.
 
+### Sans npm : `RegieIA.exe`
+
+Un seul fichier qui contient Node et la régie : double-clic, et elle démarre. Il remplace `npm start`.
+
+- Mets-le dans un dossier à lui. `config.json` et `data/` restent à côté de l'exe et ne sont jamais touchés par une mise à jour. Le programme est extrait dans `app/`.
+- Pour reprendre une installation existante, copie `config.json` et `data/` à côté de l'exe.
+- La fenêtre donne l'accès au panneau et aux réglages, l'adresse à taper sur le Steam Deck, le bouton **Préparer OBS** (l'équivalent de `npm run setup-obs`) et le journal. La fermer arrête la régie, après confirmation.
+- Pour le compiler : `launcher\build.ps1 -Version 1.2.0`, avec Node installé sur le PC qui compile.
+
+### Mises à jour automatiques
+
+`AgentRegie.exe` et `RegieIA.exe` se mettent à jour depuis les Releases GitHub du dépôt, qui doit rester public.
+
+- **Publier :** pousser un tag, `git tag agent-v1.2.0` ou `git tag regie-v1.2.0`, puis `git push origin <tag>`. GitHub Actions compile l'exe et crée la Release (`.github/workflows/`).
+- **Au lancement :** la nouvelle version s'installe seule, puis l'exe se relance sans prendre le clavier. L'agent reprend l'envoi, la régie redémarre.
+- **En cours de session :** une vérification par heure. Si une version sort, un bouton **Mettre à jour** apparaît : rien ne s'installe sans clic, pour ne couper ni un joueur en jeu ni le direct.
+- **Sans internet :** l'exe démarre normalement. La régie attend au plus 5 s la réponse de GitHub.
+- **Contrôles :** taille, empreinte SHA-256 fournie par GitHub, version annoncée, et démarrage de test du nouvel exe avant de remplacer l'ancien. Les exe ne sont pas signés : la sécurité repose sur le compte GitHub qui publie.
+- Un exe compilé sans `-Version` (0.0.0) ne se met jamais à jour.
+
+### Steam Deck
+
+Ouvre **`http://IP_DE_LA_REGIE:PORT/deck`** dans le navigateur du Steam Deck : 40 touches tactiles carrées (8 × 5) sur l'écran 1280 × 800, sans rien installer. Le bouton **Plein écran** retire la barre du navigateur.
+
+| Ligne | Touches |
+|---|---|
+| 1 | Modes, verrou, plan à l'antenne |
+| 2-3 | Joueurs 1 à 9 avec leur image (appui = plein écran), puis Split, PIP, Quad, Mosaïque, Pièce, Privé, Suggestion |
+| 4 | Casters, classement, nouveau vote |
+| 5 | Projecteurs, plein écran, vote en cours, état des connexions |
+
+Split, PIP et Quad : appuie sur le plan, puis sur les joueurs. Le plan part au dernier joueur choisi, et un second appui sur le plan annule. Privé : appuie dessus, puis sur le joueur.
+
 ### Stream Deck
 
 Avec l'action « Site web » (en arrière-plan) ou le plugin API Ninja, appelle une de ces adresses :
@@ -81,13 +114,25 @@ Avec l'action « Site web » (en arrière-plan) ou le plugin API Ninja, appelle 
 
 ### Sur chaque PC joueur (combat log)
 
+**Le plus simple : `agent/exe/dist/AgentRegie.exe`.** Copie ce seul fichier sur le PC joueur et lance-le, sans rien installer de plus (il a besoin de .NET Framework 4.8, déjà présent sur Windows 10 et 11 à jour).
+
+- Au premier lancement, le joueur choisit son dossier `Logs` avec **Parcourir** (`World of Warcraft\_forever_\Logs`). Tout autre dossier est refusé.
+- Le joueur vérifie l'adresse de la régie, choisit son pseudo dans la liste et clique sur **Démarrer**. Ces choix sont retenus, et l'envoi reprend tout seul aux lancements suivants.
+- Le **journal** de la fenêtre affiche ce que l'agent reconnaît, en direct, avec les noms en couleur et en gras : `MORT`, `KILL`, `BOSS`, `COMBAT`, `PVP`, `BG`, `ARÈNE`, `INSTANCE`, `ZONE`, `INTERRUPTION`, `RÉSURRECTION`, `PERSONNAGE`, `LOG`. Il indique le retard de chaque ligne à partir de 3 s. `PVP`, `BG`, `ARÈNE`, `INSTANCE`, `ZONE` et `COMBAT` servent à la lecture : ils ne changent rien à ce qui part à la régie. Les zones affichent leur identifiant : si un BG apparaît en `INSTANCE`, ajoute son identifiant dans `Journal.cs`.
+- Chaque `/combatlog` crée un fichier daté (`WoWCombatLog-110726_080848.txt`, soit MMJJAA_HHMMSS). L'agent suit toujours celui dont le nom porte la date la plus récente.
+- Il faut toujours taper `/combatlog` en jeu, une fois par session. La fenêtre prévient si WoW tourne sans rien écrire.
+- Pour pré-remplir une autre adresse : `agent\exe\build.ps1 -Regie http://IP_DE_LA_REGIE:PORT` (recompile l'exe, sans rien à installer sur le PC de la régie).
+
+**Sans l'exe**, avec Node :
+
 1. Copie `agent/agent.mjs` (un seul fichier, aucune installation à part Node) puis lance :
    ```
    node agent.mjs --server http://IP_DE_LA_REGIE:8080 --player 3
    ```
    Si le dossier n'est pas trouvé tout seul, ajoute `--logs "C:\...\World of Warcraft\_forever_\Logs"`. Vérifie le nom exact du dossier du jeu.
 2. **En jeu, tape `/combatlog` à chaque session**, sinon rien n'est écrit.
-3. WoW écrit le fichier par paquets, donc compte 1 à 3 s de délai. C'est pour ça qu'une mort reste à l'écran au moins 7 s.
+3. WoW garde le log en mémoire et l'écrit à la fin de chaque combat (mesuré le 2026-11-07 : moins de 1 à 5 s après la fin d'un combat court). Pendant un combat, rien n'arrive à la régie : le début d'un combat de 10 s lui parvient avec 10 s de retard. Une mort arrive dans la seconde, car elle finit le combat : l'agent la détecte sur le coup mortel, le `UNIT_DIED` n'étant écrit que plusieurs minutes après.
+4. L'agent envoie l'âge de chaque ligne. Au-delà de **Événement du log trop ancien** (6 s par défaut, sur `/reglages`), les dégâts, sorts, soins et pulls ne comptent plus dans le score d'intérêt : ils montrent seulement que le joueur n'est pas AFK. Les morts, kills et fins de boss comptent toujours, mais sans coupe urgente. Pendant un combat, AUTO se base donc surtout sur le mouvement à l'image et les micros.
 
 Sans agent, la régie marche quand même. Elle se base alors sur le mouvement à l'image des POV (pour repérer les AFK et les chargements), les micros et l'équité. Elle est juste moins « intelligente » sur l'action.
 
@@ -177,6 +222,7 @@ Il est aussi multiplié par la place laissée au jeu par les casters : 0,9 en PI
   - présent, parle depuis 15 s et jeu calme → PLEIN ÉCRAN, le jeu reste en vignette ;
   - action en jeu → retour en PIP.
 - Positions et tailles : `pc2.layouts` (en pixels sur 1920×1080).
+- Si tu déplaces ou redimensionnes le PIP directement dans OBS, la régie retient cette position, y compris après un redémarrage (`data/caster-pip.json`). Modifier « Casters en PIP : caméra » sur `/reglages` la remplace.
 - `muteMicsWhenAbsent: true` coupe les micros casters quand personne n'est là.
 
 ## Répéter avant le live
@@ -192,7 +238,10 @@ Il est aussi multiplié par la place laissée au jeu par les casters : 0,9 en PI
 | `src/obs.js` | Pilotage des deux OBS (scènes A/B sur le PC POV ; casters, cam pièce et détection de présence sur le PC Stream) |
 | `src/twitch.js` | Chat Twitch (votes, commandes, points de chaîne) |
 | `src/llm.js` | Couche Claude optionnelle |
-| `agent/agent.mjs` | Lecteur de combat log à lancer sur chaque PC joueur |
+| `agent/exe/` | Agent joueur avec interface (`AgentRegie.exe`). `CombatLog.cs` et `LogFinder.cs` doivent garder la même logique que `agent.mjs`. `Updater.cs` sert aussi à `RegieIA.exe` |
+| `launcher/` | `RegieIA.exe` : lance la régie sans npm, Node inclus |
+| `public/deck.html` | Pupitre tactile 8 × 5 pour Steam Deck (`/deck`) |
+| `agent/agent.mjs` | Lecteur de combat log en ligne de commande, à lancer sur chaque PC joueur |
 | `src/run.js` | Lance le serveur et le relance à la demande de la page de réglages |
 | `src/settings.js` | Lecture, validation et écriture de `config.json`, test de connexion OBS |
 | `public/reglages.html` | Page de réglages |

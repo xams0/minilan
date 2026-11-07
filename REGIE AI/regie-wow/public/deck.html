@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Régie Deck</title>
+<style>
+  /* Pupitre tactile pour Steam Deck : 8 × 5 touches carrées sur l'écran 1280 × 800.
+     La grille suit la taille de la fenêtre : les touches restent utilisables dans un navigateur avec sa barre. */
+  :root { --void: #05070d; --panel: #0b111e; --raised: #0f1729; --line: #2c3c60; --ink: #e8ecf5; --dim: #8c98b8; --cyan: #35e6ff; --violet: #8b6bff; --win: #35e6a0; --warn: #ffb648; --live: #ff4470; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; background: var(--void); overflow: hidden; }
+  body { color: var(--ink); font: 700 2vmin system-ui, "Segoe UI", sans-serif; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+  #grid { position: relative; height: 100dvh; width: 100vw; padding: 1.2vmin; display: grid; gap: .8vmin; grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(5, minmax(0, 1fr)); background: var(--panel); }
+  /* Encoches sur le contour global uniquement */
+  #grid::before, #grid::after { content: ""; position: absolute; width: 2.4vmin; height: 2.4vmin; pointer-events: none; z-index: 2; }
+  #grid::before { left: .4vmin; top: .4vmin; border-left: 2px solid var(--cyan); border-top: 2px solid var(--cyan); }
+  #grid::after { right: .4vmin; bottom: .4vmin; border-right: 2px solid var(--violet); border-bottom: 2px solid var(--violet); }
+
+  .k { position: relative; min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5vmin; padding: .6vmin; text-align: center; font: inherit; line-height: 1.1; color: var(--ink); background: var(--raised) center / cover no-repeat; border: 1px solid var(--line); border-radius: 1vmin; }
+  button.k { cursor: pointer; }
+  button.k:active:not(:disabled) { filter: brightness(1.5); }
+  button.k:disabled { color: var(--dim); background-color: var(--panel); border-color: #1a2440; }
+  .k small { font-size: 1.5vmin; font-weight: 500; color: var(--dim); }
+  .k.sel { background-color: var(--cyan); border-color: var(--cyan); color: var(--void); }
+  .k.sel small { color: #063a44; }
+  .k.armed { border: 2px dashed var(--warn); color: var(--warn); }
+  .k.armed small { color: var(--warn); }
+
+  .pl { justify-content: flex-end; padding: 0; }
+  .pl .cap { width: 100%; padding: .5vmin .6vmin 1vmin; background: linear-gradient(transparent, #05070de6 40%); display: flex; flex-direction: column; gap: .2vmin; }
+  .pl .num { position: absolute; left: .6vmin; top: .4vmin; font-size: 1.6vmin; color: var(--ink); text-shadow: 0 0 .5vmin #000; }
+  .pl .tag { position: absolute; right: .6vmin; top: .4vmin; font-size: 1.5vmin; color: var(--ink); text-shadow: 0 0 .5vmin #000; }
+  .pl .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pl .bar { position: absolute; left: 0; right: 0; bottom: 0; height: .6vmin; background: #0008; }
+  .pl .bar i { display: block; height: 100%; background: var(--cyan); }
+  .pl.live { border: 3px solid var(--live); }
+  .pl.live .tag { color: var(--live); }
+  .pl.picked { border: 3px solid var(--warn); }
+  .pl.priv { filter: grayscale(1) brightness(.5); }
+
+  #air { grid-column: span 4; align-items: flex-start; text-align: left; padding: 0 1.6vmin; border-left: .6vmin solid var(--live); }
+  #cur { font-size: 3vmin; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #why { font-size: 1.6vmin; font-weight: 500; color: var(--dim); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #hold { font-size: 1.8vmin; color: var(--dim); font-variant-numeric: tabular-nums; }
+  body.off #air { border-left-color: var(--warn); }
+  body.off #cur { color: var(--warn); }
+  body.off button.k { opacity: .3; pointer-events: none; }
+
+  .info { font-size: 1.7vmin; background: transparent; }
+  .info small { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .st::before { content: ""; width: 1.4vmin; height: 1.4vmin; border-radius: 50%; background: var(--live); }
+  .st.on::before { background: var(--win); }
+</style>
+</head>
+<body class="off">
+<div id="grid">
+  <!-- Ligne 1 : modes et antenne -->
+  <button class="k" data-mode="AUTO">AUTO IA</button>
+  <button class="k" data-mode="CHAT">CHAT</button>
+  <button class="k" data-mode="MANUEL">MANUEL</button>
+  <button class="k" id="lock">VERROU<small id="lockT"></small></button>
+  <div class="k" id="air"><span id="cur">Connexion à la régie…</span><span id="hold"></span><span id="why"></span></div>
+
+  <!-- Lignes 2 et 3 : joueurs 1 à 9 (remplies par le script) puis plans -->
+  <button class="k" data-t="SPLIT">SPLIT<small></small></button>
+  <button class="k" data-t="PIP">PIP<small></small></button>
+  <button class="k" data-t="QUAD">QUAD<small></small></button>
+  <button class="k" data-t="MOSAIC">MOSAÏQUE</button>
+  <button class="k" data-t="ROOM">PIÈCE</button>
+  <button class="k" id="priv">PRIVÉ<small id="privT">puis un joueur</small></button>
+  <button class="k" id="sugg">SUGGESTION<small id="suggT">aucune</small></button>
+
+  <!-- Ligne 4 : casters -->
+  <button class="k" data-c="AUTO">CASTERS<small>AUTO</small></button>
+  <button class="k" data-c="OFF">CASTERS<small>OFF</small></button>
+  <button class="k" data-c="PIP">CASTERS<small>PIP</small></button>
+  <button class="k" data-c="SPLIT">CASTERS<small>SPLIT</small></button>
+  <button class="k" data-c="FULL">CASTERS<small>FULL</small></button>
+  <div class="k info" id="casterInfo">CASTERS<small id="pres"></small></div>
+  <button class="k" id="board">CLASSEMENT</button>
+  <button class="k" id="vote">NOUVEAU VOTE<small id="voteT">mode CHAT</small></button>
+
+  <!-- Ligne 5 : projecteurs, plein écran, connexions -->
+  <button class="k" id="spotRun">PROJECTEUR<small id="spotT">aucun</small></button>
+  <button class="k" id="spotDrop">IGNORER<small>projecteur</small></button>
+  <button class="k" id="fs">PLEIN ÉCRAN</button>
+  <div class="k info" id="voteInfo">VOTE<small id="voteLead">—</small></div>
+  <div class="k info st" data-s="pc1">PC POV</div>
+  <div class="k info st" data-s="pc2">PC Stream</div>
+  <div class="k info st" data-s="twitch">Twitch</div>
+  <div class="k info st" data-s="llm">IA</div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const SLOTS = 9;
+const NEED = { SPLIT: 2, PIP: 2, QUAD: 4 };
+let ws, S, count = 0, armed = null, picks = [], privArmed = false;
+const thumbs = {};
+const send = o => { if (ws?.readyState === 1) ws.send(JSON.stringify(o)); };
+const mmss = s => { s = Math.round(Math.abs(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+
+// Les 9 touches joueurs se placent juste après le cadre « antenne », avant les plans
+const firstPlan = $('[data-t="SPLIT"]');
+for (let i = 0; i < SLOTS; i++) {
+  const b = document.createElement('button');
+  b.className = 'k pl';
+  b.dataset.i = i;
+  b.disabled = true;
+  b.innerHTML = '<span class="num"></span><span class="tag"></span><span class="cap"><span class="name"></span></span><span class="bar"><i></i></span>';
+  $('#grid').insertBefore(b, firstPlan);
+}
+const key = i => $(`.pl[data-i="${i}"]`);
+
+function setPlayers(names) {
+  count = names.length;
+  for (let i = 0; i < SLOTS; i++) {
+    const b = key(i), used = i < count;
+    b.disabled = !used;
+    b.querySelector('.num').textContent = used ? i + 1 : '';
+    b.querySelector('.name').textContent = used ? names[i] : '';
+    if (!used) { b.querySelector('.bar i').style.width = 0; b.querySelector('.tag').textContent = ''; b.classList.remove('live', 'priv', 'picked'); }
+  }
+  paintThumbs();
+}
+
+function paintThumbs() {
+  for (const [k, uri] of Object.entries(thumbs)) {
+    const b = k === 'room' ? null : key(k);
+    if (b && +k < count) b.style.backgroundImage = `url("${uri}")`;
+  }
+}
+
+function paintArmed() {
+  $$('[data-t]').forEach(b => {
+    const t = b.dataset.t, on = t === armed;
+    b.classList.toggle('armed', on);
+    const small = b.querySelector('small');
+    if (small) small.textContent = on ? `${picks.length}/${NEED[t]}` : '';
+  });
+  $$('.pl').forEach(b => b.classList.toggle('picked', picks.includes(+b.dataset.i)));
+  $('#priv').classList.toggle('armed', privArmed);
+}
+
+function disarm() { armed = null; picks = []; privArmed = false; paintArmed(); }
+
+function render() {
+  const s = S; if (!s) return;
+  $$('[data-mode]').forEach(b => b.classList.toggle('sel', b.dataset.mode === s.mode));
+  $('#lock').classList.toggle('sel', s.locked);
+  $('#lockT').textContent = s.locked ? 'verrouillé' : 'libre';
+  $('#cur').textContent = s.current.label;
+  const left = s.current.timedUntil > s.now ? ` · encore ${Math.ceil((s.current.timedUntil - s.now) / 1000)} s` : '';
+  $('#hold').textContent = mmss(s.current.holdSec) + left;
+  $('#why').textContent = s.current.reason || '';
+
+  for (const p of s.players) {
+    const b = key(p.i); if (!b) continue;
+    b.classList.toggle('live', p.shown);
+    b.classList.toggle('priv', p.private);
+    b.querySelector('.bar i').style.width = `${Math.min(100, p.interest * 10)}%`;
+    b.querySelector('.tag').textContent = p.private ? 'PRIVÉ' : p.afk ? 'AFK' : p.shown ? 'LIVE' : '';
+  }
+
+  $('[data-t="ROOM"]').disabled = !s.hasRoom;
+  const showSugg = s.suggestion && s.suggestion.label !== s.current.label && (s.mode === 'MANUEL' || s.locked);
+  $('#sugg').disabled = !showSugg;
+  $('#suggT').textContent = showSugg ? s.suggestion.label : 'aucune';
+
+  const c = s.caster;
+  $$('[data-c]').forEach(b => b.classList.toggle('sel', b.dataset.c === c.mode));
+  $('#pres').textContent = `${c.present ? 'présents' : 'absents'}${c.talking ? ', parlent' : ''} · ${c.applied}`;
+
+  $('#board').disabled = false;
+  $('#vote').disabled = s.mode !== 'CHAT';
+  $('#voteT').textContent = s.mode === 'CHAT' ? '' : 'mode CHAT';
+  if (s.vote) {
+    const top = [...s.vote.options].sort((a, b) => b.n - a.n)[0];
+    $('#voteLead').textContent = `${Math.max(0, Math.ceil((s.vote.endsAt - s.now) / 1000))} s · ${top ? `${top.label} (${top.n})` : '—'}`;
+  } else $('#voteLead').textContent = '—';
+
+  const spot = s.spotQueue[0];
+  $('#spotRun').disabled = $('#spotDrop').disabled = !spot;
+  $('#spotT').textContent = spot ? `${spot.label} (${s.spotQueue.length})` : 'aucun';
+
+  $$('[data-s]').forEach(el => el.classList.toggle('on', !!s.status[el.dataset.s]));
+}
+
+function connect() {
+  ws = new WebSocket(`ws://${location.host}/ws?role=panel`);
+  ws.onopen = () => document.body.classList.remove('off');
+  ws.onmessage = e => {
+    const m = JSON.parse(e.data);
+    if (m.type === 'config') setPlayers(m.players);
+    if (m.type === 'state') { S = m.state; render(); }
+    if (m.type === 'thumbs') { Object.assign(thumbs, m.thumbs); paintThumbs(); }
+  };
+  ws.onclose = () => {
+    document.body.classList.add('off');
+    $('#cur').textContent = 'Régie déconnectée, nouvelle tentative…';
+    $('#hold').textContent = $('#why').textContent = '';
+    setTimeout(connect, 1500);
+  };
+}
+
+function pressPlayer(i) {
+  if (privArmed) {
+    send({ cmd: 'private', i, value: !S?.players[i]?.private });
+    disarm();
+    return;
+  }
+  if (!armed) { send({ cmd: 'take', layout: { type: 'FULL', players: [i] } }); return; }
+  if (picks.includes(i)) { picks = picks.filter(x => x !== i); paintArmed(); return; }
+  picks.push(i);
+  if (picks.length >= NEED[armed]) {
+    send({ cmd: 'take', layout: { type: armed, players: picks } });
+    disarm();
+  } else paintArmed();
+}
+
+document.addEventListener('contextmenu', e => e.preventDefault()); // appui long sur l'écran tactile
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  const d = b.dataset;
+  if (d.i !== undefined) pressPlayer(+d.i);
+  else if (d.t) {
+    if (d.t in NEED) { const same = armed === d.t; disarm(); if (!same) { armed = d.t; paintArmed(); } }
+    else { disarm(); send({ cmd: 'take', layout: { type: d.t, players: [] } }); }
+  }
+  else if (d.mode) send({ cmd: 'mode', mode: d.mode });
+  else if (d.c) send({ cmd: 'caster', mode: d.c });
+  else if (b.id === 'lock') send({ cmd: 'lock', value: !S?.locked });
+  else if (b.id === 'priv') { const on = !privArmed; disarm(); privArmed = on; paintArmed(); }
+  else if (b.id === 'sugg') send({ cmd: 'applySuggestion' });
+  else if (b.id === 'board') send({ cmd: 'board' });
+  else if (b.id === 'vote') send({ cmd: 'startVote' });
+  else if (b.id === 'spotRun') send({ cmd: 'spot', action: 'run' });
+  else if (b.id === 'spotDrop') send({ cmd: 'spot', action: 'drop' });
+  else if (b.id === 'fs') { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.().catch(() => {}); }
+});
+
+connect();
+</script>
+</body>
+</html>

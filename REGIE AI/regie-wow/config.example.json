@@ -57,6 +57,7 @@
     "fairness": 0.6,
     "debtScaleSec": 300,
     "afkAfterSec": 60,
+    "maxEventAgeSec": 6,
     "mosaicEveryMin": 12,
     "mosaicDurationSec": 20,
     "roomEveryMin": 20,

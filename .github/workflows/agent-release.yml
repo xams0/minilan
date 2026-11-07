@@ -1,0 +1,29 @@
+# Pousser un tag agent-vX.Y.Z compile AgentRegie.exe et le publie en Release.
+# Les agents installés la détectent au lancement et se mettent à jour (voir agent/exe/Updater.cs).
+name: Release AgentRegie
+
+on:
+  push:
+    tags:
+      - 'agent-v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compiler
+        shell: powershell
+        run: |
+          $version = $env:GITHUB_REF_NAME.Substring('agent-v'.Length)
+          & 'REGIE AI/regie-wow/agent/exe/build.ps1' -Version $version
+
+      - name: Publier
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create $env:GITHUB_REF_NAME 'REGIE AI/regie-wow/agent/exe/dist/AgentRegie.exe' --title "AgentRegie $env:GITHUB_REF_NAME" --generate-notes
